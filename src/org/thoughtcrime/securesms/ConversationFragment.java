@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2015 Open Whisper Systems
  *
  * This program is free software: you can redistribute it and/or modify
@@ -53,21 +53,18 @@ import android.widget.Toast;
 import org.thoughtcrime.securesms.ConversationAdapter.HeaderViewHolder;
 import org.thoughtcrime.securesms.ConversationAdapter.ItemClickListener;
 import org.thoughtcrime.securesms.crypto.MasterSecret;
+import org.thoughtcrime.securesms.database.Address;
 import org.thoughtcrime.securesms.database.DatabaseFactory;
-import org.thoughtcrime.securesms.database.MmsSmsColumns;
 import org.thoughtcrime.securesms.database.MmsSmsDatabase;
-import org.thoughtcrime.securesms.database.documents.IdentityKeyMismatch;
-import org.thoughtcrime.securesms.database.documents.NetworkFailure;
+import org.thoughtcrime.securesms.database.RecipientDatabase;
 import org.thoughtcrime.securesms.database.loaders.ConversationLoader;
-import org.thoughtcrime.securesms.database.model.DisplayRecord;
 import org.thoughtcrime.securesms.database.model.MediaMmsMessageRecord;
 import org.thoughtcrime.securesms.database.model.MessageRecord;
-import org.thoughtcrime.securesms.database.model.SmsMessageRecord;
+import org.thoughtcrime.securesms.mms.GlideApp;
 import org.thoughtcrime.securesms.mms.OutgoingMediaMessage;
 import org.thoughtcrime.securesms.mms.Slide;
-import org.thoughtcrime.securesms.mms.SlideDeck;
-import org.thoughtcrime.securesms.recipients.RecipientFactory;
-import org.thoughtcrime.securesms.recipients.Recipients;
+import org.thoughtcrime.securesms.profiles.UnknownSenderView;
+import org.thoughtcrime.securesms.recipients.Recipient;
 import org.thoughtcrime.securesms.sms.MessageSender;
 import org.thoughtcrime.securesms.sms.OutgoingTextMessage;
 import org.thoughtcrime.securesms.util.SaveAttachmentTask;
@@ -76,8 +73,6 @@ import org.thoughtcrime.securesms.util.StickyHeaderDecoration;
 import org.thoughtcrime.securesms.util.ViewUtil;
 import org.thoughtcrime.securesms.util.task.ProgressDialogAsyncTask;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -98,7 +93,7 @@ public class ConversationFragment extends Fragment
   private ConversationFragmentListener listener;
 
   private MasterSecret                masterSecret;
-  private Recipients                  recipients;
+  private Recipient                   recipient;
   private long                        threadId;
   private long                        lastSeen;
   private boolean                     firstLoad;
@@ -107,6 +102,7 @@ public class ConversationFragment extends Fragment
   private RecyclerView                list;
   private RecyclerView.ItemDecoration lastSeenDecoration;
   private View                        loadMoreView;
+  private UnknownSenderView           unknownSenderView;
   private View                        composeDivider;
   private View                        scrollToBottomButton;
   private TextView                    scrollDateHeader;
@@ -126,12 +122,7 @@ public class ConversationFragment extends Fragment
     scrollToBottomButton = ViewUtil.findById(view, R.id.scroll_to_bottom_button);
     scrollDateHeader     = ViewUtil.findById(view, R.id.scroll_date_header);
 
-    scrollToBottomButton.setOnClickListener(new OnClickListener() {
-      @Override
-      public void onClick(final View view) {
-        scrollToBottom();
-      }
-    });
+    scrollToBottomButton.setOnClickListener(v -> scrollToBottom());
 
     final LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, true);
     list.setHasFixedSize(false);
@@ -139,14 +130,12 @@ public class ConversationFragment extends Fragment
     list.setItemAnimator(null);
 
     loadMoreView = inflater.inflate(R.layout.load_more_header, container, false);
-    loadMoreView.setOnClickListener(new OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        Bundle args = new Bundle();
-        args.putLong("limit", 0);
-        getLoaderManager().restartLoader(0, args, ConversationFragment.this);
-      }
+    loadMoreView.setOnClickListener(v -> {
+      Bundle args = new Bundle();
+      args.putLong("limit", 0);
+      getLoaderManager().restartLoader(0, args, ConversationFragment.this);
     });
+
     return view;
   }
 
@@ -191,18 +180,19 @@ public class ConversationFragment extends Fragment
   }
 
   private void initializeResources() {
-    this.recipients     = RecipientFactory.getRecipientsForIds(getActivity(), getActivity().getIntent().getLongArrayExtra("recipients"), true);
-    this.threadId       = this.getActivity().getIntent().getLongExtra("thread_id", -1);
-    this.lastSeen       = this.getActivity().getIntent().getLongExtra(ConversationActivity.LAST_SEEN_EXTRA, -1);
-    this.firstLoad      = true;
+    this.recipient         = Recipient.from(getActivity(), getActivity().getIntent().getParcelableExtra(ConversationActivity.ADDRESS_EXTRA), true);
+    this.threadId          = this.getActivity().getIntent().getLongExtra(ConversationActivity.THREAD_ID_EXTRA, -1);
+    this.lastSeen          = this.getActivity().getIntent().getLongExtra(ConversationActivity.LAST_SEEN_EXTRA, -1);
+    this.firstLoad         = true;
+    this.unknownSenderView = new UnknownSenderView(getActivity(), recipient, threadId);
 
     OnScrollListener scrollListener = new ConversationScrollListener(getActivity());
     list.addOnScrollListener(scrollListener);
   }
 
   private void initializeListAdapter() {
-    if (this.recipients != null && this.threadId != -1) {
-      ConversationAdapter adapter = new ConversationAdapter(getActivity(), masterSecret, locale, selectionClickListener, null, this.recipients);
+    if (this.recipient != null && this.threadId != -1) {
+      ConversationAdapter adapter = new ConversationAdapter(getActivity(), masterSecret, GlideApp.with(this), locale, selectionClickListener, null, this.recipient);
       list.setAdapter(adapter);
       list.addItemDecoration(new StickyHeaderDecoration(adapter, false, false));
 
@@ -223,7 +213,8 @@ public class ConversationFragment extends Fragment
     for (MessageRecord messageRecord : messageRecords) {
       if (messageRecord.isGroupAction() || messageRecord.isCallLog() ||
           messageRecord.isJoined() || messageRecord.isExpirationTimerUpdate() ||
-          messageRecord.isEndSession() || messageRecord.isIdentityUpdate())
+          messageRecord.isEndSession() || messageRecord.isIdentityUpdate() ||
+          messageRecord.isIdentityVerified() || messageRecord.isIdentityDefault())
       {
         actionMessage = true;
         break;
@@ -262,8 +253,8 @@ public class ConversationFragment extends Fragment
     else                            throw new AssertionError();
   }
 
-  public void reload(Recipients recipients, long threadId) {
-    this.recipients = recipients;
+  public void reload(Recipient recipient, long threadId) {
+    this.recipient = recipient;
 
     if (this.threadId != threadId) {
       this.threadId = threadId;
@@ -351,7 +342,7 @@ public class ConversationFragment extends Fragment
 
             return null;
           }
-        }.execute(messageRecords.toArray(new MessageRecord[messageRecords.size()]));
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, messageRecords.toArray(new MessageRecord[messageRecords.size()]));
       }
     });
 
@@ -365,8 +356,8 @@ public class ConversationFragment extends Fragment
     intent.putExtra(MessageDetailsActivity.MESSAGE_ID_EXTRA, message.getId());
     intent.putExtra(MessageDetailsActivity.THREAD_ID_EXTRA, threadId);
     intent.putExtra(MessageDetailsActivity.TYPE_EXTRA, message.isMms() ? MmsSmsDatabase.MMS_TRANSPORT : MmsSmsDatabase.SMS_TRANSPORT);
-    intent.putExtra(MessageDetailsActivity.RECIPIENTS_IDS_EXTRA, recipients.getIds());
-    intent.putExtra(MessageDetailsActivity.IS_PUSH_GROUP_EXTRA, (!recipients.isSingleRecipient() || recipients.isGroupRecipient()) && message.isPush());
+    intent.putExtra(MessageDetailsActivity.ADDRESS_EXTRA, recipient.getAddress());
+    intent.putExtra(MessageDetailsActivity.IS_PUSH_GROUP_EXTRA, recipient.isGroupRecipient() && message.isPush());
     startActivity(intent);
   }
 
@@ -392,7 +383,7 @@ public class ConversationFragment extends Fragment
         MessageSender.resend(context, masterSecret, messageRecords[0]);
         return null;
       }
-    }.execute(message);
+    }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, message);
   }
 
   private void handleSaveAttachment(final MediaMmsMessageRecord message) {
@@ -401,7 +392,7 @@ public class ConversationFragment extends Fragment
         for (Slide slide : message.getSlideDeck().getSlides()) {
           if ((slide.hasImage() || slide.hasVideo() || slide.hasAudio() || slide.hasDocument()) && slide.getUri() != null) {
             SaveAttachmentTask saveTask = new SaveAttachmentTask(getActivity(), masterSecret, list);
-            saveTask.execute(new Attachment(slide.getUri(), slide.getContentType(), message.getDateReceived(), slide.getFileName().orNull()));
+            saveTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, new Attachment(slide.getUri(), slide.getContentType(), message.getDateReceived(), slide.getFileName().orNull()));
             return;
           }
         }
@@ -436,6 +427,12 @@ public class ConversationFragment extends Fragment
         setLastSeen(loader.getLastSeen());
       }
 
+      if (!loader.hasSent() && !recipient.isSystemContact() && !recipient.isGroupRecipient() && recipient.getRegistered() == RecipientDatabase.RegisteredState.REGISTERED) {
+        getListAdapter().setHeaderView(unknownSenderView);
+      } else {
+        getListAdapter().setHeaderView(null);
+      }
+
       getListAdapter().changeCursor(cursor);
 
       int lastSeenPosition = getListAdapter().findLastSeenPosition(lastSeen);
@@ -462,6 +459,8 @@ public class ConversationFragment extends Fragment
     MessageRecord messageRecord = DatabaseFactory.getMmsDatabase(getContext()).readerFor(message, threadId).getCurrent();
 
     if (getListAdapter() != null) {
+      getListAdapter().setHeaderView(null);
+      setLastSeen(0);
       getListAdapter().addFastRecord(messageRecord);
     }
 
@@ -472,6 +471,8 @@ public class ConversationFragment extends Fragment
     MessageRecord messageRecord = DatabaseFactory.getSmsDatabase(getContext()).readerFor(message, threadId).getCurrent();
 
     if (getListAdapter() != null) {
+      getListAdapter().setHeaderView(null);
+      setLastSeen(0);
       getListAdapter().addFastRecord(messageRecord);
     }
 
@@ -486,12 +487,7 @@ public class ConversationFragment extends Fragment
 
   private void scrollToLastSeenPosition(final int lastSeenPosition) {
     if (lastSeenPosition > 0) {
-      list.post(new Runnable() {
-        @Override
-        public void run() {
-          ((LinearLayoutManager)list.getLayoutManager()).scrollToPositionWithOffset(lastSeenPosition, list.getHeight());
-        }
-      });
+      list.post(() -> ((LinearLayoutManager)list.getLayoutManager()).scrollToPositionWithOffset(lastSeenPosition, list.getHeight()));
     }
   }
 

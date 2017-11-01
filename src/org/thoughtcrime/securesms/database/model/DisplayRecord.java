@@ -21,7 +21,7 @@ import android.text.SpannableString;
 
 import org.thoughtcrime.securesms.database.MmsSmsColumns;
 import org.thoughtcrime.securesms.database.SmsDatabase;
-import org.thoughtcrime.securesms.recipients.Recipients;
+import org.thoughtcrime.securesms.recipients.Recipient;
 
 /**
  * The base class for all message record models.  Encapsulates basic data
@@ -36,25 +36,28 @@ public abstract class DisplayRecord {
   protected final Context context;
   protected final long type;
 
-  private final Recipients recipients;
+  private final Recipient  recipient;
   private final long       dateSent;
   private final long       dateReceived;
   private final long       threadId;
   private final Body       body;
   private final int        deliveryStatus;
-  private final int        receiptCount;
+  private final int        deliveryReceiptCount;
+  private final int        readReceiptCount;
 
-  public DisplayRecord(Context context, Body body, Recipients recipients, long dateSent,
-                       long dateReceived, long threadId, int deliveryStatus, int receiptCount, long type)
+  public DisplayRecord(Context context, Body body, Recipient recipient, long dateSent,
+                       long dateReceived, long threadId, int deliveryStatus, int deliveryReceiptCount,
+                       long type, int readReceiptCount)
   {
     this.context              = context.getApplicationContext();
     this.threadId             = threadId;
-    this.recipients           = recipients;
+    this.recipient            = recipient;
     this.dateSent             = dateSent;
     this.dateReceived         = dateReceived;
     this.type                 = type;
     this.body                 = body;
-    this.receiptCount         = receiptCount;
+    this.deliveryReceiptCount = deliveryReceiptCount;
+    this.readReceiptCount     = readReceiptCount;
     this.deliveryStatus       = deliveryStatus;
   }
 
@@ -70,7 +73,9 @@ public abstract class DisplayRecord {
   }
 
   public boolean isPending() {
-    return MmsSmsColumns.Types.isPendingMessageType(type);
+    return MmsSmsColumns.Types.isPendingMessageType(type) &&
+           !MmsSmsColumns.Types.isIdentityVerified(type)  &&
+           !MmsSmsColumns.Types.isIdentityDefault(type);
   }
 
   public boolean isOutgoing() {
@@ -79,8 +84,8 @@ public abstract class DisplayRecord {
 
   public abstract SpannableString getDisplayBody();
 
-  public Recipients getRecipients() {
-    return recipients;
+  public Recipient getRecipient() {
+    return recipient;
   }
 
   public long getDateSent() {
@@ -139,17 +144,29 @@ public abstract class DisplayRecord {
     return SmsDatabase.Types.isMissedCall(type);
   }
 
+  public boolean isVerificationStatusChange() {
+    return SmsDatabase.Types.isIdentityDefault(type) || SmsDatabase.Types.isIdentityVerified(type);
+  }
+
   public int getDeliveryStatus() {
     return deliveryStatus;
   }
 
-  public int getReceiptCount() {
-    return receiptCount;
+  public int getDeliveryReceiptCount() {
+    return deliveryReceiptCount;
+  }
+
+  public int getReadReceiptCount() {
+    return readReceiptCount;
   }
 
   public boolean isDelivered() {
     return (deliveryStatus >= SmsDatabase.Status.STATUS_COMPLETE &&
-            deliveryStatus < SmsDatabase.Status.STATUS_PENDING) || receiptCount > 0;
+            deliveryStatus < SmsDatabase.Status.STATUS_PENDING) || deliveryReceiptCount > 0;
+  }
+
+  public boolean isRemoteRead() {
+    return readReceiptCount > 0;
   }
 
   public boolean isPendingInsecureSmsFallback() {

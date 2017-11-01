@@ -36,13 +36,13 @@ import org.thoughtcrime.securesms.ApplicationContext;
 import org.thoughtcrime.securesms.attachments.Attachment;
 import org.thoughtcrime.securesms.attachments.AttachmentId;
 import org.thoughtcrime.securesms.attachments.DatabaseAttachment;
-import org.thoughtcrime.securesms.crypto.AsymmetricMasterCipher;
 import org.thoughtcrime.securesms.crypto.DecryptingPartInputStream;
 import org.thoughtcrime.securesms.crypto.EncryptingPartOutputStream;
 import org.thoughtcrime.securesms.crypto.MasterCipher;
 import org.thoughtcrime.securesms.crypto.MasterSecret;
 import org.thoughtcrime.securesms.crypto.MasterSecretUnion;
 import org.thoughtcrime.securesms.mms.MediaStream;
+import org.thoughtcrime.securesms.mms.MmsException;
 import org.thoughtcrime.securesms.mms.PartAuthority;
 import org.thoughtcrime.securesms.util.MediaUtil;
 import org.thoughtcrime.securesms.util.MediaUtil.ThumbnailData;
@@ -50,8 +50,6 @@ import org.thoughtcrime.securesms.util.Util;
 import org.thoughtcrime.securesms.video.EncryptedMediaDataSource;
 import org.whispersystems.libsignal.InvalidMessageException;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -62,9 +60,6 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-
-import ws.com.google.android.mms.ContentType;
-import ws.com.google.android.mms.MmsException;
 
 public class AttachmentDatabase extends Database {
   
@@ -86,12 +81,13 @@ public class AttachmentDatabase extends Database {
           static final String THUMBNAIL_ASPECT_RATIO = "aspect_ratio";
           static final String UNIQUE_ID              = "unique_id";
           static final String DIGEST                 = "digest";
+          static final String VOICE_NOTE             = "voice_note";
   public  static final String FAST_PREFLIGHT_ID      = "fast_preflight_id";
 
-  public static final int TRANSFER_PROGRESS_DONE         = 0;
-  public static final int TRANSFER_PROGRESS_STARTED      = 1;
-  public static final int TRANSFER_PROGRESS_AUTO_PENDING = 2;
-  public static final int TRANSFER_PROGRESS_FAILED       = 3;
+  public static final int TRANSFER_PROGRESS_DONE    = 0;
+  public static final int TRANSFER_PROGRESS_STARTED = 1;
+  public static final int TRANSFER_PROGRESS_PENDING = 2;
+  public static final int TRANSFER_PROGRESS_FAILED  = 3;
 
   private static final String PART_ID_WHERE = ROW_ID + " = ? AND " + UNIQUE_ID + " = ?";
 
@@ -99,7 +95,7 @@ public class AttachmentDatabase extends Database {
                                                            MMS_ID, CONTENT_TYPE, NAME, CONTENT_DISPOSITION,
                                                            CONTENT_LOCATION, DATA, THUMBNAIL, TRANSFER_STATE,
                                                            SIZE, FILE_NAME, THUMBNAIL, THUMBNAIL_ASPECT_RATIO,
-                                                           UNIQUE_ID, DIGEST, FAST_PREFLIGHT_ID};
+                                                           UNIQUE_ID, DIGEST, FAST_PREFLIGHT_ID, VOICE_NOTE};
 
   public static final String CREATE_TABLE = "CREATE TABLE " + TABLE_NAME + " (" + ROW_ID + " INTEGER PRIMARY KEY, " +
     MMS_ID + " INTEGER, " + "seq" + " INTEGER DEFAULT 0, "                        +
@@ -109,7 +105,8 @@ public class AttachmentDatabase extends Database {
     "ctt_t" + " TEXT, " + "encrypted" + " INTEGER, "                         +
     TRANSFER_STATE + " INTEGER, "+ DATA + " TEXT, " + SIZE + " INTEGER, "   +
     FILE_NAME + " TEXT, " + THUMBNAIL + " TEXT, " + THUMBNAIL_ASPECT_RATIO + " REAL, " +
-    UNIQUE_ID + " INTEGER NOT NULL, " + DIGEST + " BLOB, " + FAST_PREFLIGHT_ID + " TEXT);";
+    UNIQUE_ID + " INTEGER NOT NULL, " + DIGEST + " BLOB, " + FAST_PREFLIGHT_ID + " TEXT, " +
+    VOICE_NOTE + " INTEGER DEFAULT 0);";
 
   public static final String[] CREATE_INDEXS = {
     "CREATE INDEX IF NOT EXISTS part_mms_id_index ON " + TABLE_NAME + " (" + MMS_ID + ");",
@@ -337,7 +334,8 @@ public class AttachmentDatabase extends Database {
                                   databaseAttachment.getKey(),
                                   databaseAttachment.getRelay(),
                                   databaseAttachment.getDigest(),
-                                  databaseAttachment.getFastPreflightId());
+                                  databaseAttachment.getFastPreflightId(),
+                                  databaseAttachment.isVoiceNote());
   }
 
 
@@ -382,7 +380,6 @@ public class AttachmentDatabase extends Database {
     values.put(TRANSFER_STATE, transferState);
     database.update(TABLE_NAME, values, PART_ID_WHERE, attachmentId.toStrings());
     notifyConversationListeners(DatabaseFactory.getMmsDatabase(context).getThreadIdForMessage(messageId));
-    ApplicationContext.getInstance(context).notifyMediaControlEvent();
   }
 
   @VisibleForTesting
@@ -489,7 +486,8 @@ public class AttachmentDatabase extends Database {
                                   cursor.getString(cursor.getColumnIndexOrThrow(CONTENT_DISPOSITION)),
                                   cursor.getString(cursor.getColumnIndexOrThrow(NAME)),
                                   cursor.getBlob(cursor.getColumnIndexOrThrow(DIGEST)),
-                                  cursor.getString(cursor.getColumnIndexOrThrow(FAST_PREFLIGHT_ID)));
+                                  cursor.getString(cursor.getColumnIndexOrThrow(FAST_PREFLIGHT_ID)),
+                                  cursor.getInt(cursor.getColumnIndexOrThrow(VOICE_NOTE)) == 1);
   }
 
 
@@ -524,6 +522,7 @@ public class AttachmentDatabase extends Database {
     contentValues.put(FILE_NAME, fileName);
     contentValues.put(SIZE, attachment.getSize());
     contentValues.put(FAST_PREFLIGHT_ID, attachment.getFastPreflightId());
+    contentValues.put(VOICE_NOTE, attachment.isVoiceNote() ? 1 : 0);
 
     if (partData != null) {
       contentValues.put(DATA, partData.first.getAbsolutePath());
@@ -610,7 +609,7 @@ public class AttachmentDatabase extends Database {
 
       ThumbnailData data;
 
-      if (ContentType.isVideoType(attachment.getContentType())) {
+      if (MediaUtil.isVideoType(attachment.getContentType())) {
         data = generateVideoThumbnail(masterSecret, attachmentId);
       } else{
         data = MediaUtil.generateThumbnail(context, masterSecret, attachment.getContentType(), attachment.getDataUri());

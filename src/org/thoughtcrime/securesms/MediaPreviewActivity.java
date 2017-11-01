@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2014 Open Whisper Systems
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,9 +17,9 @@
 package org.thoughtcrime.securesms;
 
 import android.annotation.TargetApi;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
@@ -34,14 +34,16 @@ import android.widget.Toast;
 
 import org.thoughtcrime.securesms.components.ZoomingImageView;
 import org.thoughtcrime.securesms.crypto.MasterSecret;
+import org.thoughtcrime.securesms.database.Address;
+import org.thoughtcrime.securesms.mms.GlideApp;
 import org.thoughtcrime.securesms.mms.VideoSlide;
 import org.thoughtcrime.securesms.recipients.Recipient;
-import org.thoughtcrime.securesms.recipients.Recipient.RecipientModifiedListener;
-import org.thoughtcrime.securesms.recipients.RecipientFactory;
+import org.thoughtcrime.securesms.recipients.RecipientModifiedListener;
 import org.thoughtcrime.securesms.util.DateUtils;
 import org.thoughtcrime.securesms.util.DynamicLanguage;
 import org.thoughtcrime.securesms.util.SaveAttachmentTask;
 import org.thoughtcrime.securesms.util.SaveAttachmentTask.Attachment;
+import org.thoughtcrime.securesms.util.Util;
 import org.thoughtcrime.securesms.video.VideoPlayer;
 
 import java.io.IOException;
@@ -52,10 +54,10 @@ import java.io.IOException;
 public class MediaPreviewActivity extends PassphraseRequiredActionBarActivity implements RecipientModifiedListener {
   private final static String TAG = MediaPreviewActivity.class.getSimpleName();
 
-  public static final String RECIPIENT_EXTRA = "recipient";
-  public static final String THREAD_ID_EXTRA = "thread_id";
-  public static final String DATE_EXTRA      = "date";
-  public static final String SIZE_EXTRA      = "size";
+  public static final String ADDRESS_EXTRA  = "address";
+  public static final String DATE_EXTRA     = "date";
+  public static final String SIZE_EXTRA     = "size";
+  public static final String OUTGOING_EXTRA = "outgoing";
 
   private final DynamicLanguage dynamicLanguage = new DynamicLanguage();
 
@@ -67,9 +69,9 @@ public class MediaPreviewActivity extends PassphraseRequiredActionBarActivity im
   private Uri       mediaUri;
   private String    mediaType;
   private Recipient recipient;
-  private long      threadId;
   private long      date;
   private long      size;
+  private boolean   outgoing;
 
   @Override
   protected void onCreate(Bundle bundle, @NonNull MasterSecret masterSecret) {
@@ -98,18 +100,21 @@ public class MediaPreviewActivity extends PassphraseRequiredActionBarActivity im
 
   @Override
   public void onModified(Recipient recipient) {
-    initializeActionBar();
+    Util.runOnMain(this::initializeActionBar);
   }
 
   private void initializeActionBar() {
     final CharSequence relativeTimeSpan;
+
     if (date > 0) {
       relativeTimeSpan = DateUtils.getExtendedRelativeTimeSpanString(this,dynamicLanguage.getCurrentLocale(),date);
     } else {
       relativeTimeSpan = getString(R.string.MediaPreviewActivity_draft);
     }
-    getSupportActionBar().setTitle(recipient == null ? getString(R.string.MediaPreviewActivity_you)
-                                                     : recipient.toShortString());
+
+    if (outgoing) getSupportActionBar().setTitle(getString(R.string.MediaPreviewActivity_you));
+    else          getSupportActionBar().setTitle(recipient.toShortString());
+
     getSupportActionBar().setSubtitle(relativeTimeSpan);
   }
 
@@ -138,21 +143,21 @@ public class MediaPreviewActivity extends PassphraseRequiredActionBarActivity im
   }
 
   private void initializeViews() {
-    image = (ZoomingImageView) findViewById(R.id.image);
-    video = (VideoPlayer) findViewById(R.id.video_player);
+    image = findViewById(R.id.image);
+    video = findViewById(R.id.video_player);
   }
 
   private void initializeResources() {
-    final long recipientId = getIntent().getLongExtra(RECIPIENT_EXTRA, -1);
+    Address address = getIntent().getParcelableExtra(ADDRESS_EXTRA);
 
-    mediaUri     = getIntent().getData();
-    mediaType    = getIntent().getType();
-    date         = getIntent().getLongExtra(DATE_EXTRA, -1);
-    size         = getIntent().getLongExtra(SIZE_EXTRA, 0);
-    threadId     = getIntent().getLongExtra(THREAD_ID_EXTRA, -1);
+    mediaUri  = getIntent().getData();
+    mediaType = getIntent().getType();
+    date      = getIntent().getLongExtra(DATE_EXTRA, -1);
+    size      = getIntent().getLongExtra(SIZE_EXTRA, 0);
+    outgoing  = getIntent().getBooleanExtra(OUTGOING_EXTRA, false);
 
-    if (recipientId > -1) {
-      recipient = RecipientFactory.getRecipientForId(this, recipientId, true);
+    if (address != null) {
+      recipient = Recipient.from(this, address, true);
       recipient.addListener(this);
     } else {
       recipient = null;
@@ -172,10 +177,11 @@ public class MediaPreviewActivity extends PassphraseRequiredActionBarActivity im
       if (mediaType != null && mediaType.startsWith("image/")) {
         image.setVisibility(View.VISIBLE);
         video.setVisibility(View.GONE);
-        image.setImageUri(masterSecret, mediaUri, mediaType);
+        image.setImageUri(masterSecret, GlideApp.with(this), mediaUri, mediaType);
       } else if (mediaType != null && mediaType.startsWith("video/")) {
         image.setVisibility(View.GONE);
         video.setVisibility(View.VISIBLE);
+        video.setWindow(getWindow());
         video.setVideoSource(masterSecret, new VideoSlide(this, mediaUri, size));
       }
     } catch (IOException e) {
@@ -192,7 +198,7 @@ public class MediaPreviewActivity extends PassphraseRequiredActionBarActivity im
 
   private void showOverview() {
     Intent intent = new Intent(this, MediaOverviewActivity.class);
-    intent.putExtra(MediaOverviewActivity.THREAD_ID_EXTRA, threadId);
+    intent.putExtra(MediaOverviewActivity.ADDRESS_EXTRA, recipient.getAddress());
     startActivity(intent);
   }
 
@@ -204,13 +210,10 @@ public class MediaPreviewActivity extends PassphraseRequiredActionBarActivity im
   }
 
   private void saveToDisk() {
-    SaveAttachmentTask.showWarningDialog(this, new DialogInterface.OnClickListener() {
-      @Override
-      public void onClick(DialogInterface dialogInterface, int i) {
-        SaveAttachmentTask saveTask = new SaveAttachmentTask(MediaPreviewActivity.this, masterSecret, image);
-        long saveDate = (date > 0) ? date : System.currentTimeMillis();
-        saveTask.execute(new Attachment(mediaUri, mediaType, saveDate, null));
-      }
+    SaveAttachmentTask.showWarningDialog(this, (dialogInterface, i) -> {
+      SaveAttachmentTask saveTask = new SaveAttachmentTask(MediaPreviewActivity.this, masterSecret, image);
+      long saveDate = (date > 0) ? date : System.currentTimeMillis();
+      saveTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, new Attachment(mediaUri, mediaType, saveDate, null));
     });
   }
 
@@ -221,7 +224,7 @@ public class MediaPreviewActivity extends PassphraseRequiredActionBarActivity im
     menu.clear();
     MenuInflater inflater = this.getMenuInflater();
     inflater.inflate(R.menu.media_preview, menu);
-    if (threadId == -1) menu.findItem(R.id.media_preview__overview).setVisible(false);
+    if (recipient == null) menu.findItem(R.id.media_preview__overview).setVisible(false);
 
     return true;
   }

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2011 Whisper Systems
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,6 +27,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AlertDialog;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -38,12 +39,12 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewStub;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.thoughtcrime.securesms.attachments.DatabaseAttachment;
 import org.thoughtcrime.securesms.components.AlertView;
 import org.thoughtcrime.securesms.components.AudioView;
 import org.thoughtcrime.securesms.components.AvatarImageView;
@@ -61,14 +62,16 @@ import org.thoughtcrime.securesms.database.documents.IdentityKeyMismatch;
 import org.thoughtcrime.securesms.database.model.MediaMmsMessageRecord;
 import org.thoughtcrime.securesms.database.model.MessageRecord;
 import org.thoughtcrime.securesms.database.model.MmsMessageRecord;
+import org.thoughtcrime.securesms.jobs.AttachmentDownloadJob;
 import org.thoughtcrime.securesms.jobs.MmsDownloadJob;
 import org.thoughtcrime.securesms.jobs.MmsSendJob;
 import org.thoughtcrime.securesms.jobs.SmsSendJob;
+import org.thoughtcrime.securesms.mms.GlideRequests;
 import org.thoughtcrime.securesms.mms.PartAuthority;
 import org.thoughtcrime.securesms.mms.Slide;
 import org.thoughtcrime.securesms.mms.SlideClickListener;
 import org.thoughtcrime.securesms.recipients.Recipient;
-import org.thoughtcrime.securesms.recipients.Recipients;
+import org.thoughtcrime.securesms.recipients.RecipientModifiedListener;
 import org.thoughtcrime.securesms.service.ExpiringMessageManager;
 import org.thoughtcrime.securesms.util.DateUtils;
 import org.thoughtcrime.securesms.util.DynamicTheme;
@@ -95,7 +98,7 @@ import java.util.Set;
  */
 
 public class ConversationItem extends LinearLayout
-    implements Recipient.RecipientModifiedListener, Recipients.RecipientsModifiedListener, BindableConversationItem
+    implements RecipientModifiedListener, BindableConversationItem
 {
   private final static String TAG = ConversationItem.class.getSimpleName();
 
@@ -104,20 +107,23 @@ public class ConversationItem extends LinearLayout
   private Locale        locale;
   private boolean       groupThread;
   private Recipient     recipient;
+  private GlideRequests glideRequests;
 
   protected View             bodyBubble;
   private TextView           bodyText;
   private TextView           dateText;
   private TextView           simInfoText;
   private TextView           indicatorText;
-  private TextView           groupStatusText;
-  private ImageView          secureImage;
+  private TextView           groupSender;
+  private TextView           groupSenderProfileName;
+  private View               groupSenderHolder;
+  private ImageView          insecureImage;
   private AvatarImageView    contactPhoto;
   private DeliveryStatusView deliveryStatusIndicator;
   private AlertView          alertView;
 
   private @NonNull  Set<MessageRecord>  batchSelected = new HashSet<>();
-  private @Nullable Recipients          conversationRecipients;
+  private @NonNull  Recipient           conversationRecipient;
   private @NonNull  Stub<ThumbnailView> mediaThumbnailStub;
   private @NonNull  Stub<AudioView>     audioViewStub;
   private @NonNull  Stub<DocumentView>  documentViewStub;
@@ -150,20 +156,22 @@ public class ConversationItem extends LinearLayout
 
     initializeAttributes();
 
-    this.bodyText                = (TextView)           findViewById(R.id.conversation_item_body);
-    this.dateText                = (TextView)           findViewById(R.id.conversation_item_date);
-    this.simInfoText             = (TextView)           findViewById(R.id.sim_info);
-    this.indicatorText           = (TextView)           findViewById(R.id.indicator_text);
-    this.groupStatusText         = (TextView)           findViewById(R.id.group_message_status);
-    this.secureImage             = (ImageView)          findViewById(R.id.secure_indicator);
-    this.deliveryStatusIndicator = (DeliveryStatusView) findViewById(R.id.delivery_status);
-    this.alertView               = (AlertView)          findViewById(R.id.indicators_parent);
-    this.contactPhoto            = (AvatarImageView)    findViewById(R.id.contact_photo);
-    this.bodyBubble              =                      findViewById(R.id.body_bubble);
-    this.mediaThumbnailStub      = new Stub<>((ViewStub) findViewById(R.id.image_view_stub));
-    this.audioViewStub           = new Stub<>((ViewStub) findViewById(R.id.audio_view_stub));
-    this.documentViewStub        = new Stub<>((ViewStub) findViewById(R.id.document_view_stub));
-    this.expirationTimer         = (ExpirationTimerView) findViewById(R.id.expiration_indicator);
+    this.bodyText                =            findViewById(R.id.conversation_item_body);
+    this.dateText                =            findViewById(R.id.conversation_item_date);
+    this.simInfoText             =            findViewById(R.id.sim_info);
+    this.indicatorText           =            findViewById(R.id.indicator_text);
+    this.groupSender             =            findViewById(R.id.group_message_sender);
+    this.groupSenderProfileName  =            findViewById(R.id.group_message_sender_profile);
+    this.insecureImage           =            findViewById(R.id.insecure_indicator);
+    this.deliveryStatusIndicator =            findViewById(R.id.delivery_status);
+    this.alertView               =            findViewById(R.id.indicators_parent);
+    this.contactPhoto            =            findViewById(R.id.contact_photo);
+    this.bodyBubble              =            findViewById(R.id.body_bubble);
+    this.mediaThumbnailStub      = new Stub<>(findViewById(R.id.image_view_stub));
+    this.audioViewStub           = new Stub<>(findViewById(R.id.audio_view_stub));
+    this.documentViewStub        = new Stub<>(findViewById(R.id.document_view_stub));
+    this.expirationTimer         =            findViewById(R.id.expiration_indicator);
+    this.groupSenderHolder       =            findViewById(R.id.group_sender_holder);
 
     setOnClickListener(new ClickListener(null));
 
@@ -176,20 +184,22 @@ public class ConversationItem extends LinearLayout
   @Override
   public void bind(@NonNull MasterSecret       masterSecret,
                    @NonNull MessageRecord      messageRecord,
+                   @NonNull GlideRequests      glideRequests,
                    @NonNull Locale             locale,
                    @NonNull Set<MessageRecord> batchSelected,
-                   @NonNull Recipients         conversationRecipients)
+                   @NonNull Recipient          conversationRecipient)
   {
     this.masterSecret           = masterSecret;
     this.messageRecord          = messageRecord;
     this.locale                 = locale;
+    this.glideRequests          = glideRequests;
     this.batchSelected          = batchSelected;
-    this.conversationRecipients = conversationRecipients;
-    this.groupThread            = !conversationRecipients.isSingleRecipient() || conversationRecipients.isGroupRecipient();
+    this.conversationRecipient  = conversationRecipient;
+    this.groupThread            = conversationRecipient.isGroupRecipient();
     this.recipient              = messageRecord.getIndividualRecipient();
 
     this.recipient.addListener(this);
-    this.conversationRecipients.addListener(this);
+    this.conversationRecipient.addListener(this);
 
     setMediaAttributes(messageRecord);
     setInteractionState(messageRecord);
@@ -201,6 +211,32 @@ public class ConversationItem extends LinearLayout
     setMinimumWidth();
     setSimInfo(messageRecord);
     setExpiration(messageRecord);
+  }
+
+  @Override
+  public void onLayout(boolean changed, int left, int top, int right, int bottom) {
+    super.onLayout(changed, left, top, right, bottom);
+
+    if (groupSenderHolder != null && groupSenderHolder.getVisibility() == View.VISIBLE) {
+      View content = (View) groupSenderHolder.getParent();
+
+      groupSenderHolder.layout(content.getPaddingLeft(), content.getPaddingTop(),
+                               content.getWidth() - content.getPaddingRight(),
+                               content.getPaddingTop() + groupSenderHolder.getMeasuredHeight());
+
+
+      if (ViewCompat.getLayoutDirection(groupSenderProfileName) == ViewCompat.LAYOUT_DIRECTION_RTL) {
+        groupSenderProfileName.layout(groupSenderHolder.getPaddingLeft(),
+                                      groupSenderHolder.getPaddingTop(),
+                                      groupSenderHolder.getPaddingLeft() + groupSenderProfileName.getWidth(),
+                                      groupSenderHolder.getPaddingTop() + groupSenderProfileName.getHeight());
+      } else {
+        groupSenderProfileName.layout(groupSenderHolder.getWidth() - groupSenderHolder.getPaddingRight() - groupSenderProfileName.getWidth(),
+                                      groupSenderHolder.getPaddingTop(),
+                                      groupSenderHolder.getWidth() - groupSenderProfileName.getPaddingRight(),
+                                      groupSenderHolder.getPaddingTop() + groupSenderProfileName.getHeight());
+      }
+    }
   }
 
   private void initializeAttributes() {
@@ -239,35 +275,35 @@ public class ConversationItem extends LinearLayout
     }
 
     if (audioViewStub.resolved()) {
-      setAudioViewTint(messageRecord, conversationRecipients);
+      setAudioViewTint(messageRecord, conversationRecipient);
     }
 
     if (documentViewStub.resolved()) {
-      setDocumentViewTint(messageRecord, conversationRecipients);
+      setDocumentViewTint(messageRecord, conversationRecipient);
     }
   }
 
-  private void setAudioViewTint(MessageRecord messageRecord, Recipients recipients) {
+  private void setAudioViewTint(MessageRecord messageRecord, Recipient recipient) {
     if (messageRecord.isOutgoing()) {
       if (DynamicTheme.LIGHT.equals(TextSecurePreferences.getTheme(context))) {
-        audioViewStub.get().setTint(recipients.getColor().toConversationColor(context), defaultBubbleColor);
+        audioViewStub.get().setTint(recipient.getColor().toConversationColor(context), defaultBubbleColor);
       } else {
         audioViewStub.get().setTint(Color.WHITE, defaultBubbleColor);
       }
     } else {
-      audioViewStub.get().setTint(Color.WHITE, recipients.getColor().toConversationColor(context));
+      audioViewStub.get().setTint(Color.WHITE, recipient.getColor().toConversationColor(context));
     }
   }
 
-  private void setDocumentViewTint(MessageRecord messageRecord, Recipients recipients) {
+  private void setDocumentViewTint(MessageRecord messageRecord, Recipient recipient) {
     if (messageRecord.isOutgoing()) {
       if (DynamicTheme.LIGHT.equals(TextSecurePreferences.getTheme(context))) {
-        documentViewStub.get().setTint(recipients.getColor().toConversationColor(context), defaultBubbleColor);
+        documentViewStub.get().setTint(recipient.getColor().toConversationColor(context), defaultBubbleColor);
       } else {
         documentViewStub.get().setTint(Color.WHITE, defaultBubbleColor);
       }
     } else {
-      documentViewStub.get().setTint(Color.WHITE, recipients.getColor().toConversationColor(context));
+      documentViewStub.get().setTint(Color.WHITE, recipient.getColor().toConversationColor(context));
     }
   }
 
@@ -353,7 +389,7 @@ public class ConversationItem extends LinearLayout
       if (documentViewStub.resolved()) documentViewStub.get().setVisibility(View.GONE);
 
       //noinspection ConstantConditions
-      mediaThumbnailStub.get().setImageResource(masterSecret,
+      mediaThumbnailStub.get().setImageResource(masterSecret, glideRequests,
                                                 ((MmsMessageRecord)messageRecord).getSlideDeck().getThumbnailSlide(),
                                                 showControls, false);
       mediaThumbnailStub.get().setThumbnailClickListener(new ThumbnailClickListener());
@@ -370,9 +406,14 @@ public class ConversationItem extends LinearLayout
     }
   }
 
-  private void setContactPhoto(Recipient recipient) {
-    if (! messageRecord.isOutgoing()) {
-      setContactPhotoForRecipient(recipient);
+  private void setContactPhoto(@NonNull Recipient recipient) {
+    if (contactPhoto == null) return;
+
+    if (messageRecord.isOutgoing() || !groupThread) {
+      contactPhoto.setVisibility(View.GONE);
+    } else {
+      contactPhoto.setAvatar(glideRequests, recipient, true);
+      contactPhoto.setVisibility(View.VISIBLE);
     }
   }
 
@@ -393,7 +434,7 @@ public class ConversationItem extends LinearLayout
   private void setStatusIcons(MessageRecord messageRecord) {
     indicatorText.setVisibility(View.GONE);
 
-    secureImage.setVisibility(messageRecord.isSecure() ? View.VISIBLE : View.GONE);
+    insecureImage.setVisibility(messageRecord.isSecure() ? View.GONE : View.VISIBLE);
     bodyText.setCompoundDrawablesWithIntrinsicBounds(0, 0, messageRecord.isKeyExchange() ? R.drawable.ic_menu_login : 0, 0);
     dateText.setText(DateUtils.getExtendedRelativeTimeSpanString(getContext(), locale, messageRecord.getTimestamp()));
 
@@ -404,10 +445,11 @@ public class ConversationItem extends LinearLayout
     } else {
       alertView.setNone();
 
-      if      (!messageRecord.isOutgoing()) deliveryStatusIndicator.setNone();
-      else if (messageRecord.isPending())   deliveryStatusIndicator.setPending();
-      else if (messageRecord.isDelivered()) deliveryStatusIndicator.setDelivered();
-      else                                  deliveryStatusIndicator.setSent();
+      if      (!messageRecord.isOutgoing())  deliveryStatusIndicator.setNone();
+      else if (messageRecord.isPending())    deliveryStatusIndicator.setPending();
+      else if (messageRecord.isRemoteRead()) deliveryStatusIndicator.setRead();
+      else if (messageRecord.isDelivered())  deliveryStatusIndicator.setDelivered();
+      else                                   deliveryStatusIndicator.setSent();
     }
   }
 
@@ -454,7 +496,7 @@ public class ConversationItem extends LinearLayout
             expirationManager.scheduleDeletion(id, mms, messageRecord.getExpiresIn());
             return null;
           }
-        }.execute();
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
       }
     } else {
       this.expirationTimer.setVisibility(View.GONE);
@@ -497,20 +539,20 @@ public class ConversationItem extends LinearLayout
 
   private void setGroupMessageStatus(MessageRecord messageRecord, Recipient recipient) {
     if (groupThread && !messageRecord.isOutgoing()) {
-      this.groupStatusText.setText(recipient.toShortString());
-      this.groupStatusText.setVisibility(View.VISIBLE);
+      this.groupSender.setText(recipient.toShortString());
+
+      if (recipient.getName() == null && !TextUtils.isEmpty(recipient.getProfileName())) {
+        this.groupSenderProfileName.setText("~" + recipient.getProfileName());
+        this.groupSenderProfileName.setVisibility(View.VISIBLE);
+      } else {
+        this.groupSenderProfileName.setText(null);
+        this.groupSenderProfileName.setVisibility(View.GONE);
+      }
+
+      this.groupSenderHolder.setVisibility(View.VISIBLE);
     } else {
-      this.groupStatusText.setVisibility(View.GONE);
+      this.groupSenderHolder.setVisibility(View.GONE);
     }
-  }
-
-  /// Helper Methods
-
-  private void setContactPhotoForRecipient(final Recipient recipient) {
-    if (contactPhoto == null) return;
-
-    contactPhoto.setAvatar(recipient, true);
-    contactPhoto.setVisibility(View.VISIBLE);
   }
 
   /// Event handlers
@@ -526,24 +568,13 @@ public class ConversationItem extends LinearLayout
   }
 
   @Override
-  public void onModified(final Recipient recipient) {
-    Util.runOnMain(new Runnable() {
-      @Override
-      public void run() {
-        setBubbleState(messageRecord, recipient);
-        setContactPhoto(recipient);
-        setGroupMessageStatus(messageRecord, recipient);
-      }
-    });
-  }
-
-  @Override
-  public void onModified(final Recipients recipients) {
-    Util.runOnMain(new Runnable() {
-      @Override
-      public void run() {
-        setAudioViewTint(messageRecord, recipients);
-      }
+  public void onModified(final Recipient modified) {
+    Util.runOnMain(() -> {
+      setBubbleState(messageRecord, recipient);
+      setContactPhoto(recipient);
+      setGroupMessageStatus(messageRecord, recipient);
+      setAudioViewTint(messageRecord, conversationRecipient);
+      setDocumentViewTint(messageRecord, conversationRecipient);
     });
   }
 
@@ -559,6 +590,11 @@ public class ConversationItem extends LinearLayout
         DatabaseFactory.getAttachmentDatabase(context).setTransferState(messageRecord.getId(),
                                                                         slide.asAttachment(),
                                                                         AttachmentDatabase.TRANSFER_PROGRESS_STARTED);
+
+        ApplicationContext.getInstance(context)
+                          .getJobManager()
+                          .add(new AttachmentDownloadJob(context, messageRecord.getId(),
+                                                         ((DatabaseAttachment)slide.asAttachment()).getAttachmentId(), true));
       }
     }
   }
@@ -571,10 +607,10 @@ public class ConversationItem extends LinearLayout
         Intent intent = new Intent(context, MediaPreviewActivity.class);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         intent.setDataAndType(slide.getUri(), slide.getContentType());
-        if (!messageRecord.isOutgoing()) intent.putExtra(MediaPreviewActivity.RECIPIENT_EXTRA, recipient.getRecipientId());
+        intent.putExtra(MediaPreviewActivity.ADDRESS_EXTRA, conversationRecipient.getAddress());
+        intent.putExtra(MediaPreviewActivity.OUTGOING_EXTRA, messageRecord.isOutgoing());
         intent.putExtra(MediaPreviewActivity.DATE_EXTRA, messageRecord.getTimestamp());
         intent.putExtra(MediaPreviewActivity.SIZE_EXTRA, slide.asAttachment().getSize());
-        intent.putExtra(MediaPreviewActivity.THREAD_ID_EXTRA, messageRecord.getThreadId());
 
         context.startActivity(intent);
       } else if (slide.getUri() != null) {
@@ -628,7 +664,7 @@ public class ConversationItem extends LinearLayout
         intent.putExtra(MessageDetailsActivity.THREAD_ID_EXTRA, messageRecord.getThreadId());
         intent.putExtra(MessageDetailsActivity.TYPE_EXTRA, messageRecord.isMms() ? MmsSmsDatabase.MMS_TRANSPORT : MmsSmsDatabase.SMS_TRANSPORT);
         intent.putExtra(MessageDetailsActivity.IS_PUSH_GROUP_EXTRA, groupThread && messageRecord.isPush());
-        intent.putExtra(MessageDetailsActivity.RECIPIENTS_IDS_EXTRA, conversationRecipients.getIds());
+        intent.putExtra(MessageDetailsActivity.ADDRESS_EXTRA, conversationRecipient.getAddress());
         context.startActivity(intent);
       } else if (!messageRecord.isOutgoing() && messageRecord.isIdentityMismatchFailure()) {
         handleApproveIdentity();
@@ -673,7 +709,7 @@ public class ConversationItem extends LinearLayout
           ApplicationContext.getInstance(context)
                             .getJobManager()
                             .add(new SmsSendJob(context, messageRecord.getId(),
-                                                messageRecord.getIndividualRecipient().getNumber()));
+                                                messageRecord.getIndividualRecipient().getAddress().serialize()));
         }
       }
     });

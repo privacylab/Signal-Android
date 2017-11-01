@@ -36,7 +36,7 @@ public class PushNotificationReceiveJob extends PushReceivedJob implements Injec
     receiver.retrieveMessages(new SignalServiceMessageReceiver.MessageReceivedCallback() {
       @Override
       public void onMessage(SignalServiceEnvelope envelope) {
-        handle(envelope, false);
+        handle(envelope);
       }
     });
   }
@@ -50,5 +50,6 @@ public class PushNotificationReceiveJob extends PushReceivedJob implements Injec
   @Override
   public void onCanceled() {
     Log.w(TAG, "***** Failed to download pending message!");
+//    MessageNotifier.notifyMessagesPending(getContext());
   }
 }

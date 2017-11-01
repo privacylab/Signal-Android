@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2015 Open Whisper Systems
  *
  * This program is free software: you can redistribute it and/or modify
@@ -37,6 +37,7 @@ import org.thoughtcrime.securesms.contacts.ContactSelectionListAdapter;
 import org.thoughtcrime.securesms.contacts.ContactSelectionListItem;
 import org.thoughtcrime.securesms.contacts.ContactsCursorLoader;
 import org.thoughtcrime.securesms.database.CursorRecyclerViewAdapter;
+import org.thoughtcrime.securesms.mms.GlideApp;
 import org.thoughtcrime.securesms.util.StickyHeaderDecoration;
 import org.thoughtcrime.securesms.util.ViewUtil;
 
@@ -59,9 +60,9 @@ public class ContactSelectionListFragment extends    Fragment
   public final static String MULTI_SELECT = "multi_select";
   public final static String REFRESHABLE  = "refreshable";
 
-  public final static int DISPLAY_MODE_ALL        = ContactsCursorLoader.MODE_ALL;
-  public final static int DISPLAY_MODE_PUSH_ONLY  = ContactsCursorLoader.MODE_PUSH_ONLY;
-  public final static int DISPLAY_MODE_OTHER_ONLY = ContactsCursorLoader.MODE_OTHER_ONLY;
+  public final static int DISPLAY_MODE_ALL       = ContactsCursorLoader.MODE_ALL;
+  public final static int DISPLAY_MODE_PUSH_ONLY = ContactsCursorLoader.MODE_PUSH_ONLY;
+  public final static int DISPLAY_MODE_SMS_ONLY  = ContactsCursorLoader.MODE_SMS_ONLY;
 
   private TextView emptyText;
 
@@ -74,7 +75,7 @@ public class ContactSelectionListFragment extends    Fragment
 
   @Override
   public void onActivityCreated(Bundle icicle) {
-    super.onCreate(icicle);
+    super.onActivityCreated(icicle);
     initializeCursor();
   }
 
@@ -119,6 +120,7 @@ public class ContactSelectionListFragment extends    Fragment
 
   private void initializeCursor() {
     ContactSelectionListAdapter adapter = new ContactSelectionListAdapter(getActivity(),
+                                                                          GlideApp.with(this),
                                                                           null,
                                                                           new ListClickListener(),
                                                                           isMulti());

@@ -109,7 +109,7 @@ public abstract class Slide {
 
   public boolean isPendingDownload() {
     return getTransferState() == AttachmentDatabase.TRANSFER_PROGRESS_FAILED ||
-           getTransferState() == AttachmentDatabase.TRANSFER_PROGRESS_AUTO_PENDING;
+           getTransferState() == AttachmentDatabase.TRANSFER_PROGRESS_PENDING;
   }
 
   public long getTransferState() {
@@ -133,12 +133,13 @@ public abstract class Slide {
                                                          @NonNull  String  defaultMime,
                                                                    long     size,
                                                                    boolean  hasThumbnail,
-                                                         @Nullable String   fileName)
+                                                         @Nullable String   fileName,
+                                                                   boolean  voiceNote)
   {
     try {
       Optional<String> resolvedType    = Optional.fromNullable(MediaUtil.getMimeType(context, uri));
       String           fastPreflightId = String.valueOf(SecureRandom.getInstance("SHA1PRNG").nextLong());
-      return new UriAttachment(uri, hasThumbnail ? uri : null, resolvedType.or(defaultMime), AttachmentDatabase.TRANSFER_PROGRESS_STARTED, size, fileName, fastPreflightId);
+      return new UriAttachment(uri, hasThumbnail ? uri : null, resolvedType.or(defaultMime), AttachmentDatabase.TRANSFER_PROGRESS_STARTED, size, fileName, fastPreflightId, voiceNote);
     } catch (NoSuchAlgorithmException e) {
       throw new AssertionError(e);
     }

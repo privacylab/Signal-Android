@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2014 Open Whisper Systems
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 package org.thoughtcrime.securesms;
 
 import android.app.Activity;
-import android.content.Context;
+import android.content.AsyncTaskLoader;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -38,45 +38,39 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.transition.Transition;
 import com.soundcloud.android.crop.Crop;
 
 import org.thoughtcrime.securesms.components.PushRecipientsPanel;
 import org.thoughtcrime.securesms.components.PushRecipientsPanel.RecipientsPanelChangedListener;
 import org.thoughtcrime.securesms.contacts.RecipientsEditor;
 import org.thoughtcrime.securesms.contacts.avatars.ContactColors;
-import org.thoughtcrime.securesms.contacts.avatars.ContactPhotoFactory;
+import org.thoughtcrime.securesms.contacts.avatars.ResourceContactPhoto;
 import org.thoughtcrime.securesms.crypto.MasterSecret;
+import org.thoughtcrime.securesms.database.Address;
 import org.thoughtcrime.securesms.database.DatabaseFactory;
 import org.thoughtcrime.securesms.database.GroupDatabase;
 import org.thoughtcrime.securesms.database.GroupDatabase.GroupRecord;
-import org.thoughtcrime.securesms.database.NotInDirectoryException;
-import org.thoughtcrime.securesms.database.TextSecureDirectory;
+import org.thoughtcrime.securesms.database.RecipientDatabase;
 import org.thoughtcrime.securesms.database.ThreadDatabase;
 import org.thoughtcrime.securesms.groups.GroupManager;
 import org.thoughtcrime.securesms.groups.GroupManager.GroupActionResult;
-import org.thoughtcrime.securesms.mms.RoundedCorners;
+import org.thoughtcrime.securesms.mms.GlideApp;
 import org.thoughtcrime.securesms.recipients.Recipient;
-import org.thoughtcrime.securesms.recipients.RecipientFactory;
-import org.thoughtcrime.securesms.recipients.Recipients;
 import org.thoughtcrime.securesms.util.BitmapUtil;
 import org.thoughtcrime.securesms.util.DynamicLanguage;
 import org.thoughtcrime.securesms.util.DynamicTheme;
-import org.thoughtcrime.securesms.util.GroupUtil;
-import org.thoughtcrime.securesms.util.task.ProgressDialogAsyncTask;
 import org.thoughtcrime.securesms.util.SelectedRecipientsAdapter;
 import org.thoughtcrime.securesms.util.SelectedRecipientsAdapter.OnRecipientDeletedListener;
 import org.thoughtcrime.securesms.util.TextSecurePreferences;
-import org.thoughtcrime.securesms.util.Util;
 import org.thoughtcrime.securesms.util.ViewUtil;
+import org.thoughtcrime.securesms.util.task.ProgressDialogAsyncTask;
 import org.whispersystems.libsignal.util.guava.Optional;
 import org.whispersystems.signalservice.api.util.InvalidNumberException;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -95,8 +89,8 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity
 
   private final static String TAG = GroupCreateActivity.class.getSimpleName();
 
-  public static final String GROUP_RECIPIENT_EXTRA = "group_recipient";
-  public static final String GROUP_THREAD_EXTRA    = "group_thread";
+  public static final String GROUP_ADDRESS_EXTRA = "group_recipient";
+  public static final String GROUP_THREAD_EXTRA  = "group_thread";
 
   private final DynamicTheme    dynamicTheme    = new DynamicTheme();
   private final DynamicLanguage dynamicLanguage = new DynamicLanguage();
@@ -172,17 +166,12 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity
     }
   }
 
-  private static boolean isActiveInDirectory(Context context, Recipient recipient) {
-    try {
-      return TextSecureDirectory.getInstance(context)
-                                .isSecureTextSupported(Util.canonicalizeNumber(context, recipient.getNumber()));
-    } catch (NotInDirectoryException | InvalidNumberException e) {
-      return false;
-    }
+  private static boolean isActiveInDirectory(Recipient recipient) {
+    return recipient.resolve().getRegistered() == RecipientDatabase.RegisteredState.REGISTERED;
   }
 
   private void addSelectedContacts(@NonNull Recipient... recipients) {
-    new AddMembersTask(this).execute(recipients);
+    new AddMembersTask(this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, recipients);
   }
 
   private void addSelectedContacts(@NonNull Collection<Recipient> recipients) {
@@ -202,8 +191,7 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity
     recipientsEditor.setHint(R.string.recipients_panel__add_members);
     recipientsPanel.setPanelChangeListener(this);
     findViewById(R.id.contacts_button).setOnClickListener(new AddRecipientButtonListener());
-    avatar.setImageDrawable(ContactPhotoFactory.getDefaultGroupPhoto()
-                                               .asDrawable(this, ContactColors.UNKNOWN_COLOR.toConversationColor(this)));
+    avatar.setImageDrawable(new ResourceContactPhoto(R.drawable.ic_group_white_24dp).asDrawable(this, ContactColors.UNKNOWN_COLOR.toConversationColor(this)));
     avatar.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
@@ -213,17 +201,10 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity
   }
 
   private void initializeExistingGroup() {
-    final String encodedGroupId = RecipientFactory.getRecipientForId(this, getIntent().getLongExtra(GROUP_RECIPIENT_EXTRA, -1), true)
-                                                  .getNumber();
-    byte[] groupId;
-    try {
-      groupId = GroupUtil.getDecodedId(encodedGroupId);
-    } catch (IOException ioe) {
-      Log.w(TAG, "Couldn't decode the encoded groupId passed in via intent", ioe);
-      groupId = null;
-    }
-    if (groupId != null) {
-      new FillExistingGroupInfoAsyncTask(this).execute(groupId);
+    final Address groupAddress = getIntent().getParcelableExtra(GROUP_ADDRESS_EXTRA);
+
+    if (groupAddress != null) {
+      new FillExistingGroupInfoAsyncTask(this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, groupAddress.toGroupString());
     }
   }
 
@@ -260,8 +241,8 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity
   }
 
   @Override
-  public void onRecipientsPanelUpdate(Recipients recipients) {
-    if (recipients != null) addSelectedContacts(recipients.getRecipientsList());
+  public void onRecipientsPanelUpdate(List<Recipient> recipients) {
+    if (recipients != null && !recipients.isEmpty()) addSelectedContacts(recipients);
   }
 
   private void handleGroupCreate() {
@@ -271,22 +252,22 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity
       return;
     }
     if (isSignalGroup()) {
-      new CreateSignalGroupTask(this, masterSecret, avatarBmp, getGroupName(), getAdapter().getRecipients()).execute();
+      new CreateSignalGroupTask(this, masterSecret, avatarBmp, getGroupName(), getAdapter().getRecipients()).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     } else {
-      new CreateMmsGroupTask(this, getAdapter().getRecipients()).execute();
+      new CreateMmsGroupTask(this, masterSecret, getAdapter().getRecipients()).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
   }
 
   private void handleGroupUpdate() {
     new UpdateSignalGroupTask(this, masterSecret, groupToUpdate.get().id, avatarBmp,
-                              getGroupName(), getAdapter().getRecipients()).execute();
+                              getGroupName(), getAdapter().getRecipients()).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
   }
 
-  private void handleOpenConversation(long threadId, Recipients recipients) {
+  private void handleOpenConversation(long threadId, Recipient recipient) {
     Intent intent = new Intent(this, ConversationActivity.class);
     intent.putExtra(ConversationActivity.THREAD_ID_EXTRA, threadId);
     intent.putExtra(ConversationActivity.DISTRIBUTION_TYPE_EXTRA, ThreadDatabase.DistributionTypes.DEFAULT);
-    intent.putExtra(ConversationActivity.RECIPIENTS_EXTRA, recipients.getIds());
+    intent.putExtra(ConversationActivity.ADDRESS_EXTRA, recipient.getAddress());
     startActivity(intent);
     finish();
   }
@@ -310,9 +291,12 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity
     switch (reqCode) {
       case PICK_CONTACT:
         List<String> selected = data.getStringArrayListExtra("contacts");
+
         for (String contact : selected) {
-          final Recipient recipient = RecipientFactory.getRecipientsFromString(this, contact, false).getPrimaryRecipient();
-          if (recipient != null) addSelectedContacts(recipient);
+          Address   address   = Address.fromExternal(this, contact);
+          Recipient recipient = Recipient.from(this, address, false);
+
+          addSelectedContacts(recipient);
         }
         break;
 
@@ -320,16 +304,19 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity
         new Crop(data.getData()).output(outputFile).asSquare().start(this);
         break;
       case Crop.REQUEST_CROP:
-        Glide.with(this).load(Crop.getOutput(data)).asBitmap()
-             .skipMemoryCache(true)
-             .diskCacheStrategy(DiskCacheStrategy.NONE)
-             .centerCrop().override(AVATAR_SIZE, AVATAR_SIZE)
-             .into(new SimpleTarget<Bitmap>() {
-               @Override
-               public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                 setAvatar(Crop.getOutput(data), resource);
-               }
-             });
+        GlideApp.with(this)
+                .asBitmap()
+                .load(Crop.getOutput(data))
+                .skipMemoryCache(true)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .centerCrop()
+                .override(AVATAR_SIZE, AVATAR_SIZE)
+                .into(new SimpleTarget<Bitmap>() {
+                  @Override
+                  public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
+                    setAvatar(Crop.getOutput(data), resource);
+                  }
+                });
     }
   }
 
@@ -343,31 +330,35 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity
     }
   }
 
-  private static class CreateMmsGroupTask extends AsyncTask<Void,Void,Long> {
-    private GroupCreateActivity activity;
-    private Set<Recipient>      members;
+  private static class CreateMmsGroupTask extends AsyncTask<Void,Void,GroupActionResult> {
+    private final GroupCreateActivity activity;
+    private final MasterSecret        masterSecret;
+    private final Set<Recipient>      members;
 
-    public CreateMmsGroupTask(GroupCreateActivity activity, Set<Recipient> members) {
-      this.activity = activity;
-      this.members  = members;
+    public CreateMmsGroupTask(GroupCreateActivity activity, MasterSecret masterSecret, Set<Recipient> members) {
+      this.activity     = activity;
+      this.masterSecret = masterSecret;
+      this.members      = members;
     }
 
     @Override
-    protected Long doInBackground(Void... avoid) {
-      Recipients recipients = RecipientFactory.getRecipientsFor(activity, members, false);
-      return DatabaseFactory.getThreadDatabase(activity)
-                            .getThreadIdFor(recipients, ThreadDatabase.DistributionTypes.CONVERSATION);
-    }
+    protected GroupActionResult doInBackground(Void... avoid) {
+      List<Address> memberAddresses = new LinkedList<>();
 
-    @Override
-    protected void onPostExecute(Long resultThread) {
-      if (resultThread > -1) {
-        activity.handleOpenConversation(resultThread,
-                                        RecipientFactory.getRecipientsFor(activity, members, true));
-      } else {
-        Toast.makeText(activity, R.string.GroupCreateActivity_contacts_mms_exception, Toast.LENGTH_LONG).show();
-        activity.finish();
+      for (Recipient recipient : members) {
+        memberAddresses.add(recipient.getAddress());
       }
+
+      String    groupId        = DatabaseFactory.getGroupDatabase(activity).getOrCreateGroupForMembers(memberAddresses, true);
+      Recipient groupRecipient = Recipient.from(activity, Address.fromSerialized(groupId), true);
+      long      threadId       = DatabaseFactory.getThreadDatabase(activity).getThreadIdFor(groupRecipient, ThreadDatabase.DistributionTypes.DEFAULT);
+
+      return new GroupActionResult(groupRecipient, threadId);
+    }
+
+    @Override
+    protected void onPostExecute(GroupActionResult result) {
+      activity.handleOpenConversation(result.getThreadId(), result.getGroupRecipient());
     }
 
     @Override
@@ -423,11 +414,7 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity
 
     @Override
     protected Optional<GroupActionResult> doInBackground(Void... aVoid) {
-      try {
-        return Optional.of(GroupManager.createGroup(activity, masterSecret, members, avatar, name));
-      } catch (InvalidNumberException e) {
-        return Optional.absent();
-      }
+      return Optional.of(GroupManager.createGroup(activity, masterSecret, members, avatar, name, false));
     }
 
     @Override
@@ -445,10 +432,10 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity
   }
 
   private static class UpdateSignalGroupTask extends SignalGroupTask {
-    private byte[] groupId;
+    private String groupId;
 
     public UpdateSignalGroupTask(GroupCreateActivity activity,
-                                 MasterSecret masterSecret, byte[] groupId, Bitmap avatar, String name,
+                                 MasterSecret masterSecret, String groupId, Bitmap avatar, String name,
                                  Set<Recipient> members)
     {
       super(activity, masterSecret, avatar, name, members);
@@ -470,7 +457,7 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity
         if (!activity.isFinishing()) {
           Intent intent = activity.getIntent();
           intent.putExtra(GROUP_THREAD_EXTRA, result.get().getThreadId());
-          intent.putExtra(GROUP_RECIPIENT_EXTRA, result.get().getGroupRecipient().getIds());
+          intent.putExtra(GROUP_ADDRESS_EXTRA, result.get().getGroupRecipient().getAddress());
           activity.setResult(RESULT_OK, intent);
           activity.finish();
         }
@@ -508,16 +495,12 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity
       final List<Result> results = new LinkedList<>();
 
       for (Recipient recipient : recipients) {
-        boolean isPush        = isActiveInDirectory(activity, recipient);
-        String  recipientE164 = null;
-        try {
-          recipientE164 = Util.canonicalizeNumber(activity, recipient.getNumber());
-        } catch (InvalidNumberException ine) { /* do nothing */ }
+        boolean isPush = isActiveInDirectory(recipient);
 
         if (failIfNotPush && !isPush) {
           results.add(new Result(null, false, activity.getString(R.string.GroupCreateActivity_cannot_add_non_push_to_existing_group,
-                                                                 recipient.getNumber())));
-        } else if (TextUtils.equals(TextSecurePreferences.getLocalNumber(activity), recipientE164)) {
+                                                                 recipient.toShortString())));
+        } else if (TextUtils.equals(TextSecurePreferences.getLocalNumber(activity), recipient.getAddress().serialize())) {
           results.add(new Result(null, false, activity.getString(R.string.GroupCreateActivity_youre_already_in_the_group)));
         } else {
           results.add(new Result(recipient, isPush, null));
@@ -541,7 +524,7 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity
     }
   }
 
-  private static class FillExistingGroupInfoAsyncTask extends ProgressDialogAsyncTask<byte[],Void,Optional<GroupData>> {
+  private static class FillExistingGroupInfoAsyncTask extends ProgressDialogAsyncTask<String,Void,Optional<GroupData>> {
     private GroupCreateActivity activity;
 
     public FillExistingGroupInfoAsyncTask(GroupCreateActivity activity) {
@@ -552,19 +535,19 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity
     }
 
     @Override
-    protected Optional<GroupData> doInBackground(byte[]... groupIds) {
-      final GroupDatabase   db               = DatabaseFactory.getGroupDatabase(activity);
-      final Recipients      recipients       = db.getGroupMembers(groupIds[0], false);
-      final GroupRecord     group            = db.getGroup(groupIds[0]);
-      final Set<Recipient>  existingContacts = new HashSet<>(recipients.getRecipientsList().size());
-      existingContacts.addAll(recipients.getRecipientsList());
+    protected Optional<GroupData> doInBackground(String... groupIds) {
+      final GroupDatabase         db               = DatabaseFactory.getGroupDatabase(activity);
+      final List<Recipient>       recipients       = db.getGroupMembers(groupIds[0], false);
+      final Optional<GroupRecord> group            = db.getGroup(groupIds[0]);
+      final Set<Recipient>        existingContacts = new HashSet<>(recipients.size());
+      existingContacts.addAll(recipients);
 
-      if (group != null) {
+      if (group.isPresent()) {
         return Optional.of(new GroupData(groupIds[0],
                                          existingContacts,
-                                         BitmapUtil.fromByteArray(group.getAvatar()),
-                                         group.getAvatar(),
-                                         group.getTitle()));
+                                         BitmapUtil.fromByteArray(group.get().getAvatar()),
+                                         group.get().getAvatar(),
+                                         group.get().getTitle()));
       } else {
         return Optional.absent();
       }
@@ -591,22 +574,22 @@ public class GroupCreateActivity extends PassphraseRequiredActionBarActivity
 
   private <T> void setAvatar(T model, Bitmap bitmap) {
     avatarBmp = bitmap;
-    Glide.with(this)
-         .load(model)
-         .skipMemoryCache(true)
-         .diskCacheStrategy(DiskCacheStrategy.NONE)
-         .transform(new RoundedCorners(this, avatar.getWidth() / 2))
-         .into(avatar);
+    GlideApp.with(this)
+            .load(model)
+            .circleCrop()
+            .skipMemoryCache(true)
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
+            .into(avatar);
   }
 
   private static class GroupData {
-    byte[]         id;
+    String         id;
     Set<Recipient> recipients;
     Bitmap         avatarBmp;
     byte[]         avatarBytes;
     String         name;
 
-    public GroupData(byte[] id, Set<Recipient> recipients, Bitmap avatarBmp, byte[] avatarBytes, String name) {
+    public GroupData(String id, Set<Recipient> recipients, Bitmap avatarBmp, byte[] avatarBytes, String name) {
       this.id          = id;
       this.recipients  = recipients;
       this.avatarBmp   = avatarBmp;

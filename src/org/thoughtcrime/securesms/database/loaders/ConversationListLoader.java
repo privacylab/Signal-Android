@@ -6,6 +6,7 @@ import android.database.MatrixCursor;
 import android.database.MergeCursor;
 
 import org.thoughtcrime.securesms.contacts.ContactAccessor;
+import org.thoughtcrime.securesms.database.Address;
 import org.thoughtcrime.securesms.database.DatabaseFactory;
 import org.thoughtcrime.securesms.database.ThreadDatabase;
 import org.thoughtcrime.securesms.util.AbstractCursorLoader;
@@ -41,14 +42,14 @@ public class ConversationListLoader extends AbstractCursorLoader {
     if (archivedCount > 0) {
       MatrixCursor switchToArchiveCursor = new MatrixCursor(new String[] {
           ThreadDatabase.ID, ThreadDatabase.DATE, ThreadDatabase.MESSAGE_COUNT,
-          ThreadDatabase.RECIPIENT_IDS, ThreadDatabase.SNIPPET, ThreadDatabase.READ,
+          ThreadDatabase.ADDRESS, ThreadDatabase.SNIPPET, ThreadDatabase.READ,
           ThreadDatabase.TYPE, ThreadDatabase.SNIPPET_TYPE, ThreadDatabase.SNIPPET_URI,
-          ThreadDatabase.ARCHIVED, ThreadDatabase.STATUS, ThreadDatabase.RECEIPT_COUNT,
-          ThreadDatabase.EXPIRES_IN, ThreadDatabase.LAST_SEEN}, 1);
+          ThreadDatabase.ARCHIVED, ThreadDatabase.STATUS, ThreadDatabase.DELIVERY_RECEIPT_COUNT,
+          ThreadDatabase.EXPIRES_IN, ThreadDatabase.LAST_SEEN, ThreadDatabase.READ_RECEIPT_COUNT}, 1);
 
       switchToArchiveCursor.addRow(new Object[] {-1L, System.currentTimeMillis(), archivedCount,
                                                  "-1", null, 1, ThreadDatabase.DistributionTypes.ARCHIVE,
-                                                 0, null, 0, -1, 0, 0, 0});
+                                                 0, null, 0, -1, 0, 0, 0, -1});
       
       cursorList.add(switchToArchiveCursor);
     }
@@ -62,6 +63,12 @@ public class ConversationListLoader extends AbstractCursorLoader {
 
   private Cursor getFilteredConversationList(String filter) {
     List<String> numbers = ContactAccessor.getInstance().getNumbersForThreadSearchFilter(context, filter);
-    return DatabaseFactory.getThreadDatabase(context).getFilteredConversationList(numbers);
+    List<Address> addresses = new LinkedList<>();
+
+    for (String number : numbers) {
+      addresses.add(Address.fromExternal(context, number));
+    }
+
+    return DatabaseFactory.getThreadDatabase(context).getFilteredConversationList(addresses);
   }
 }

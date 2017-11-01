@@ -35,7 +35,10 @@
   <string name="AttachmentTypeSelectorAdapter_contact">Кантактная інфармацыя</string>
   <!--AudioSlidePlayer-->
   <!--BlockedContactsActivity-->
+  <!--BucketedThreadMedia-->
   <!--CallScreen-->
+  <!--ClearProfileActivity-->
+  <string name="ClearProfileActivity_remove">Выдаліць</string>
   <!--ConfirmIdentityDialog-->
   <!--ContactsDatabase-->
   <!--ConversationItem-->
@@ -88,6 +91,7 @@
   <string name="ConversationListFragment_deleting">Выдаленне</string>
   <!--ConversationListItem-->
   <!--ConversationListItemAction-->
+  <!--CreateProfileActivity-->
   <!--CustomDefaultPreference-->
   <string name="CustomDefaultPreference_using_custom">Выкарыстоўваць кастомны: %s</string>
   <string name="CustomDefaultPreference_using_default">Выкарыстоўваць стандартны: %s</string>
@@ -118,6 +122,7 @@
   <string name="GroupCreateActivity_creating_group">Стварэнне %1$s…</string>
   <string name="GroupCreateActivity_updating_group">Абнаўленне %1$s...</string>
   <string name="GroupCreateActivity_loading_group_details">Загрузка дэталяў групы...</string>
+  <!--GroupShareProfileView-->
   <!--GroupMembersDialog-->
   <string name="GroupMembersDialog_me">Я</string>
   <!--ImportExportActivity-->
@@ -150,6 +155,7 @@
   <!--MessageRetrievalService-->
   <!--MmsDownloader-->
   <string name="MmsDownloader_error_storing_mms">Памылка захавання MMS!</string>
+  <!--MediaOverviewActivity-->
   <!--- NotificationBarManager-->
   <!--NotificationMmsMessageRecord-->
   <string name="NotificationMmsMessageRecord_multimedia_message">Мультымедыя паведамленне</string>
@@ -211,6 +217,8 @@
   <!--RegistrationService-->
   <string name="RegistrationService_registration_complete">Рэгістрацыя ваканана</string>
   <string name="RegistrationService_registration_error">Памылка рэгістрацыі</string>
+  <!--RingtonePreference-->
+  <string name="RingtonePreference_ringtone_silent">Няма</string>
   <!--Slide-->
   <!--SmsMessageRecord-->
   <string name="SmsMessageRecord_received_corrupted_key_exchange_message">Атрыманы пашкоджаны ключ абмену паведамленнямі!</string>
@@ -220,6 +228,9 @@
   <!--ThreadRecord-->
   <string name="ThreadRecord_draft">Чарнавік:</string>
   <!--UpdateApkReadyListener-->
+  <!--UnknownSenderView-->
+  <!--UntrustedSendDialog-->
+  <!--UnverifiedSendDialog-->
   <!--VerifyIdentityActivity-->
   <!--KeyExchangeInitiator-->
   <string name="KeyExchangeInitiator_initiate_despite_existing_request_question">Ініцыяваць нягледзячы на існуючы запыт?</string>
@@ -321,6 +332,7 @@
   <!--experience_upgrade_activity-->
   <!--expiration-->
   <string name="expiration_off">Выкл</string>
+  <!--unverified safety numbers-->
   <!--giphy_activity-->
   <!--giphy_fragment-->
   <!--import_export_fragment-->
@@ -344,12 +356,13 @@
   <!--load_more_header-->
   <!--media_overview_activity-->
   <!--message_recipients_list_item-->
-  <string name="message_recipients_list_item__verify">ВЕРЫФІКАВАЦЬ</string>
   <string name="message_recipients_list_item__resend">ДАСЛАЦЬ ПАЎТОРНА</string>
   <!--GroupUtil-->
+  <!--profile_group_share_view-->
   <!--prompt_passphrase_activity-->
   <string name="prompt_passphrase_activity__unlock">Разблакіраваць</string>
   <!--prompt_mms_activity-->
+  <!--profile_create_activity-->
   <!--recipient_preferences_activity-->
   <!--recipient_preferences-->
   <!--- redphone_call_controls-->
@@ -387,6 +400,7 @@
   <string name="registration_progress_activity__check">Праверыць</string>
   <!--recipients_panel-->
   <string name="recipients_panel__to"><small>Увядзіце імя альбо нумар тэлефона</small></string>
+  <!--unknown_sender_view-->
   <!--verify_display_fragment-->
   <!--verify_identity-->
   <!--message_details_header-->

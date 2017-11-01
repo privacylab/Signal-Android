@@ -6,6 +6,7 @@
       <item>English</item>
       <item>Arabic العربية</item>
       <item>Bulgarian български</item>
+      <item>Català</item>
       <item>Čeština</item>
       <item>Chinese (Simplified) 中文 (简体)</item>
       <item>Chinese (Traditional) 中文 (繁體)</item>
@@ -50,6 +51,7 @@
       <item>en</item>
       <item>ar</item>
       <item>bg</item>
+      <item>ca</item>
       <item>cs</item>
       <item>zh_CN</item>
       <item>zh_TW</item>
@@ -131,14 +133,12 @@
     <item>@string/preferences__fast</item>
     <item>@string/preferences__normal</item>
     <item>@string/preferences__slow</item>
-    <item>@string/preferences__custom</item>
   </string-array>
 
   <string-array name="pref_led_blink_pattern_values" translatable="false">
     <item>300,300</item>
     <item>500,2000</item>
     <item>3000,3000</item>
-    <item>custom</item>
   </string-array>
 
   <string-array name="pref_repeat_alerts_entries">

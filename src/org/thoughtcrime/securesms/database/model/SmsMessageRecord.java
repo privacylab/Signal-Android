@@ -26,7 +26,6 @@ import org.thoughtcrime.securesms.database.SmsDatabase;
 import org.thoughtcrime.securesms.database.documents.IdentityKeyMismatch;
 import org.thoughtcrime.securesms.database.documents.NetworkFailure;
 import org.thoughtcrime.securesms.recipients.Recipient;
-import org.thoughtcrime.securesms.recipients.Recipients;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -41,19 +40,20 @@ import java.util.List;
 public class SmsMessageRecord extends MessageRecord {
 
   public SmsMessageRecord(Context context, long id,
-                          Body body, Recipients recipients,
+                          Body body, Recipient recipient,
                           Recipient individualRecipient,
                           int recipientDeviceId,
                           long dateSent, long dateReceived,
-                          int receiptCount,
+                          int deliveryReceiptCount,
                           long type, long threadId,
                           int status, List<IdentityKeyMismatch> mismatches,
-                          int subscriptionId, long expiresIn, long expireStarted)
+                          int subscriptionId, long expiresIn, long expireStarted,
+                          int readReceiptCount)
   {
-    super(context, id, body, recipients, individualRecipient, recipientDeviceId,
-          dateSent, dateReceived, threadId, status, receiptCount, type,
+    super(context, id, body, recipient, individualRecipient, recipientDeviceId,
+          dateSent, dateReceived, threadId, status, deliveryReceiptCount, type,
           mismatches, new LinkedList<NetworkFailure>(), subscriptionId,
-          expiresIn, expireStarted);
+          expiresIn, expireStarted, readReceiptCount);
   }
 
   public long getType() {
@@ -64,10 +64,6 @@ public class SmsMessageRecord extends MessageRecord {
   public SpannableString getDisplayBody() {
     if (SmsDatabase.Types.isFailedDecryptType(type)) {
       return emphasisAdded(context.getString(R.string.MessageDisplayHelper_bad_encrypted_message));
-    } else if (isProcessedKeyExchange()) {
-      return new SpannableString("");
-    } else if (isStaleKeyExchange()) {
-      return emphasisAdded(context.getString(R.string.ConversationItem_error_received_stale_key_exchange_message));
     } else if (isCorruptedKeyExchange()) {
       return emphasisAdded(context.getString(R.string.SmsMessageRecord_received_corrupted_key_exchange_message));
     } else if (isInvalidVersionKeyExchange()) {

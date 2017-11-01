@@ -17,16 +17,16 @@
   <string name="ApplicationPreferencesActivity_delete_all_old_messages_now">למחוק את כל המסרים הישנים עכשיו?</string>
   <plurals name="ApplicationPreferencesActivity_this_will_immediately_trim_all_conversations_to_the_d_most_recent_messages">
     <item quantity="one">זה מיד יקצץ את כל השיחות וישאיר רק את המסר החדש ביותר.</item>
-    <item quantity="other">זה מיד יקצץ את כל השיחות וישאיר רק את %d המסרים החדשים ביותר.</item>
+    <item quantity="other">פעולה זו מיד תקצץ את כל השיחות וישאיר רק את %d המסרים החדשים ביותר.</item>
   </plurals>
   <string name="ApplicationPreferencesActivity_delete">מחיקה</string>
   <string name="ApplicationPreferencesActivity_disable_passphrase">לבטל את המשפט הסודי?</string>
-  <string name="ApplicationPreferencesActivity_this_will_permanently_unlock_signal_and_message_notifications">זה יפתח באופן קבוע את הנעילה של סיגנל ואת התראות המסרים.</string>
+  <string name="ApplicationPreferencesActivity_this_will_permanently_unlock_signal_and_message_notifications">פעולה זו תפתח באופן קבוע את הנעילה של סיגנל ואת התראות המסרים.</string>
   <string name="ApplicationPreferencesActivity_disable">לכבות</string>
   <string name="ApplicationPreferencesActivity_unregistering">ביטול רישום</string>
-  <string name="ApplicationPreferencesActivity_unregistering_from_signal_messages_and_calls">ביטול רישום במסרים ושיחות קוליות של סיגנל...</string>
+  <string name="ApplicationPreferencesActivity_unregistering_from_signal_messages_and_calls">מבטל רישום במסרים ושיחות קוליות של סיגנל...</string>
   <string name="ApplicationPreferencesActivity_disable_signal_messages_and_calls">לכבות מסרים ושיחות קוליות של סיגנל?</string>
-  <string name="ApplicationPreferencesActivity_disable_signal_messages_and_calls_by_unregistering">לכבות את המסרים ואת השיחות הקוליות של סיגנל באמצעות ביטול רישום בשרת. יהיה צריך לרשום מחדש את מספר הטלפון שלך מחדש כדי להשתמש בהם שוב בעתיד.</string>
+  <string name="ApplicationPreferencesActivity_disable_signal_messages_and_calls_by_unregistering">לכבות את המסרים ואת השיחות הקוליות של סיגנל באמצעות ביטול רישום בשרת. יהיה צריך לרשום את מספר הטלפון שלך מחדש כדי להשתמש בהם שוב בעתיד.</string>
   <string name="ApplicationPreferencesActivity_error_connecting_to_server">אירעה שגיאה בחיבור לשרת!</string>
   <string name="ApplicationPreferencesActivity_sms_enabled">SMS מופעלים</string>
   <string name="ApplicationPreferencesActivity_touch_to_change_your_default_sms_app">נא לגעת כדי לשנות את אפליקציית בררת המחדל שלך ל־SMS</string>
@@ -61,14 +61,19 @@
   <string name="AudioSlidePlayer_error_playing_audio">שגיאה בהשמעת צליל!</string>
   <!--BlockedContactsActivity-->
   <string name="BlockedContactsActivity_blocked_contacts">אנשי קשר חסומים</string>
+  <!--BucketedThreadMedia-->
+  <string name="BucketedThreadMedia_Today">היום</string>
+  <string name="BucketedThreadMedia_Yesterday">אתמול</string>
   <!--CallScreen-->
   <string name="CallScreen_Incoming_call">שיחה נכנסת</string>
+  <!--ClearProfileActivity-->
+  <string name="ClearProfileActivity_remove">הסרה</string>
   <!--ConfirmIdentityDialog-->
   <string name="ConfirmIdentityDialog_your_safety_number_with_s_has_changed">מספר הבטיחות שלך עם %1$s השתנה. ייתכן שזה אומר שמישהו מנסה ללכוד את התקשורת שלכם או ש%2$s פשוט התקין את סיגנל מחדש.</string>
   <string name="ConfirmIdentityDialog_you_may_wish_to_verify_your_safety_number_with_this_contact">אולי תרצה לוודא את מספרי הבטיחות שלך עם איש הקשר הזה.</string>
   <string name="ConfirmIdentityDialog_accept">קבל</string>
   <!--ContactsDatabase-->
-  <string name="ContactsDatabase_message_s">שליחת מסר אל %s</string>
+  <string name="ContactsDatabase_message_s">שלח מסר אל %s</string>
   <string name="ContactsDatabase_signal_call_s">שיחת סיגנל אל %s</string>
   <!--ConversationItem-->
   <string name="ConversationItem_message_size_d_kb">גודל המסר: %d ק״ב</string>
@@ -83,19 +88,20 @@
   <string name="ConversationItem_click_to_approve_unencrypted">הקש למשלוח בלתי־מאובטח אם משלוח מאובטח בלתי אפשרי</string>
   <string name="ConversationItem_click_to_approve_unencrypted_sms_dialog_title">לעבור ל־SMS לא מוצפן במידה והצפנה אינה אפשרית?</string>
   <string name="ConversationItem_click_to_approve_unencrypted_mms_dialog_title">לעבור ל־MMS לא מוצפן במידה והצפנה אינה אפשרית?</string>
-  <string name="ConversationItem_click_to_approve_unencrypted_dialog_message">המסר הזה <b>לא</b> יוצפן כי המקבל כבר אינו משתמש בסיגנל.\n\nהאם לשלוח מסר לא מאובטח?</string>
+  <string name="ConversationItem_click_to_approve_unencrypted_dialog_message">המסר הזה <b>לא</b> יוצפן כי הנמען כבר אינו משתמש בסיגנל.\n\nהאם לשלוח מסר בלתי מאובטח?</string>
   <string name="ConversationItem_unable_to_open_media">לא הצלחתי למצוא אפליקציה לפתיחת המדיה הזאת.</string>
+  <string name="ConversationItem_copied_text">הועתק %s</string>
   <string name="ConversationItem_from_s">מאת %s</string>
   <string name="ConversationItem_to_s">אל %s</string>
   <!--ConversationActivity-->
   <string name="ConversationActivity_reset_secure_session_question">לאתחל מחדש התחברות מאובטחת?</string>
-  <string name="ConversationActivity_this_may_help_if_youre_having_encryption_problems">זה יכול לעזור עם יש לך בעיות הצפנה בשיחה הזאת. המסרים שלך יישמרו.</string>
+  <string name="ConversationActivity_this_may_help_if_youre_having_encryption_problems">פעולה זו יכולה לעזור עם יש לך בעיות הצפנה בשיחה הזאת. המסרים שלך יישמרו.</string>
   <string name="ConversationActivity_reset">לאתחל</string>
   <string name="ConversationActivity_delete_thread_question">למחוק שיחה?</string>
-  <string name="ConversationActivity_this_will_permanently_delete_all_messages_in_this_conversation">זה ימחק לצמיתות את כל המסרים בשיחה הזאת.</string>
+  <string name="ConversationActivity_this_will_permanently_delete_all_messages_in_this_conversation">פעולה זו תמחק לצמיתות את כל המסרים בשיחה זו.</string>
   <string name="ConversationActivity_add_attachment">צירוף קובץ</string>
   <string name="ConversationActivity_select_contact_info">נא לבחור מידע של איש קשר</string>
-  <string name="ConversationActivity_compose_message">כתיבת מסר</string>
+  <string name="ConversationActivity_compose_message">כתוב מסר</string>
   <string name="ConversationActivity_sorry_there_was_an_error_setting_your_attachment">סליחה, אירעה שגיאה בהצבת הקובץ המצורף שלך.</string>
   <string name="ConversationActivity_the_gif_you_selected_was_too_big">הגיף שבחרת היה גדול מדי!</string>
   <string name="ConversationActivity_sorry_the_selected_video_exceeds_message_size_restrictions">סליחה, הסרטון שנבחר עבר את גודל המסר המירבי (%1$s ק״ב).</string>
@@ -126,7 +132,7 @@
   <string name="ConversationActivity_unblock_this_contact_question">לבטל את החסימה של איש הקשר הזה?</string>
   <string name="ConversationActivity_you_will_once_again_be_able_to_receive_messages_and_calls_from_this_contact">תוכל שוב לקבל מסרים ושיחות מאיש הקשר הזה.</string>
   <string name="ConversationActivity_unblock">הסרת חסימה</string>
-  <string name="ConversationActivity_attachment_exceeds_size_limits">הצרופה עברה את הגודל המותר לסוג המסר הנשלח.</string>
+  <string name="ConversationActivity_attachment_exceeds_size_limits">הקובץ המצורף עבר את הגודל המותר לסוג המסר הנשלח.</string>
   <string name="ConversationActivity_quick_camera_unavailable">מצלמה אינה זמינה</string>
   <string name="ConversationActivity_unable_to_record_audio">לא ניתן להקליט קול!</string>
   <string name="ConversationActivity_error_sending_voice_message">שגיאה בשליחת הודעה קולית</string>
@@ -155,7 +161,7 @@
   </plurals>
   <plurals name="ConversationFragment_error_while_saving_attachments_to_sd_card">
     <item quantity="one">שגיאה בעת שמירת הצרופה לאחסון!</item>
-    <item quantity="other">שגיאה בעת שמירת הצרופות לאחסון!</item>
+    <item quantity="other">שגיאה בעת שמירת הקבצים המצורפים לאחסון!</item>
   </plurals>
   <plurals name="ConversationFragment_files_saved_successfully">
     <item quantity="one">הקובץ נשמר בהצלחה.</item>
@@ -164,13 +170,13 @@
   <string name="ConversationFragment_unable_to_write_to_sd_card_exclamation">לא ניתן לכתוב לאחסון!</string>
   <plurals name="ConversationFragment_saving_n_attachments">
     <item quantity="one">שמירת צרופה</item>
-    <item quantity="other">שמירת %1$d צרופות</item>
+    <item quantity="other">שמירת %1$d קבצים מצורפים</item>
   </plurals>
   <plurals name="ConversationFragment_saving_n_attachments_to_sd_card">
     <item quantity="one">שמירת צרופה לאחסון...</item>
-    <item quantity="other">שמירת %1$d צרופות לאחסון...</item>
+    <item quantity="other">שמירת %1$d קבצים מצורפים לאחסון...</item>
   </plurals>
-  <string name="ConversationFragment_collecting_attahments">איסוף צרופות...</string>
+  <string name="ConversationFragment_collecting_attahments">אוסף קבצים מצורפים...</string>
   <string name="ConversationFragment_pending">ממתין...</string>
   <string name="ConversationFragment_push">נתונים (סיגנל)</string>
   <string name="ConversationFragment_mms">MMS</string>
@@ -204,6 +210,7 @@
   <string name="ConversationListItem_key_exchange_message">הודעת החלפת מפתח</string>
   <!--ConversationListItemAction-->
   <string name="ConversationListItemAction_archived_conversations_d">שיחות גנוזות (%d)</string>
+  <!--CreateProfileActivity-->
   <!--CustomDefaultPreference-->
   <string name="CustomDefaultPreference_using_custom">משתמש בהגדרה מותאמת אישית: %s</string>
   <string name="CustomDefaultPreference_using_default">משמש הערך ההתחלתי: %s</string>
@@ -227,6 +234,7 @@
   <string name="DeviceListItem_last_active_s">פעל לאחרונה %s</string>
   <string name="DeviceListItem_today">היום</string>
   <!--DocumentView-->
+  <string name="DocumentView_unknown_file">קובץ לא ידוע</string>
   <!--DozeReminder-->
   <string name="DozeReminder_optimize_for_missing_play_services">מיטוב למצב של שירותי Play לא זמינים</string>
   <string name="DozeReminder_this_device_does_not_support_play_services_tap_to_disable_system_battery">המכשיר הזה לא תומך בשירותי Play. יש ללחוץ כדי לכבות מיטוב סוללה שמונע מסיגנל אחזור מסרים בזמן חוסר־פעילות.</string>
@@ -277,6 +285,7 @@
   <string name="GroupCreateActivity_cannot_add_non_push_to_existing_group">לא הצלחתי להוסיף את %1$s כי זה לא משתמש סיגנל.</string>
   <string name="GroupCreateActivity_loading_group_details">טעינת נתוני קבוצה...</string>
   <string name="GroupCreateActivity_youre_already_in_the_group">כבר נכנסת לקבוצה.</string>
+  <!--GroupShareProfileView-->
   <!--GroupMembersDialog-->
   <string name="GroupMembersDialog_me">אני</string>
   <!--ImportExportActivity-->
@@ -344,6 +353,8 @@
   <string name="MmsDownloader_error_storing_mms">שגיאה באחסון ה־MMS!</string>
   <string name="MmsDownloader_error_connecting_to_mms_provider">שגיאה בהתחברות לספק MMS</string>
   <string name="MmsDownloader_error_reading_mms_settings">שגיאה בקריאת הגדרות MMS של ספק התקשורת האלחוטית</string>
+  <!--MediaOverviewActivity-->
+  <string name="MediaOverviewActivity_Documents">מסמכים</string>
   <!--- NotificationBarManager-->
   <string name="NotificationBarManager_signal_call_in_progress">שיחת סיגנל נערכת עכשיו</string>
   <string name="NotificationBarManager_missed_call_from_s">שיחה שלא נענתה מאת %s</string>
@@ -366,9 +377,14 @@
   <string name="MessageRecord_s_called_you">הייתה לך שיחה מאת %s</string>
   <string name="MessageRecord_called_s">התקשרת אל %s</string>
   <string name="MessageRecord_missed_call_from">שיחה שלא נענתה מאת %s</string>
+  <string name="MessageRecord_s_joined_signal">%s משתמש בסיגנל!</string>
   <string name="MessageRecord_you_set_disappearing_message_time_to_s">הגדרת את זמן העלמת המסר ל־%1$s.</string>
   <string name="MessageRecord_s_set_disappearing_message_time_to_s">%1$s הגדיר את זמן העלמת המסר ל־%2$s.</string>
   <string name="MessageRecord_your_safety_number_with_s_has_changed">מספר הבטיחות שלך עם  %s השתנה.</string>
+  <string name="MessageRecord_you_marked_your_safety_number_with_s_verified">סימנת את מספר הבטיחות שלך עם %s כמאומת</string>
+  <string name="MessageRecord_you_marked_your_safety_number_with_s_verified_from_another_device">סימנת את מספר הבטיחות שלך עם %sכמאומת מהתקן אחר</string>
+  <string name="MessageRecord_you_marked_your_safety_number_with_s_unverified">סימנת את מספר הבטיחות שלך עם %s כבלתי מאומת</string>
+  <string name="MessageRecord_you_marked_your_safety_number_with_s_unverified_from_another_device">סימנת את מספר הבטיחות שלך עם %s כבלתי מאומת מהתקן אחר</string>
   <!--PassphraseChangeActivity-->
   <string name="PassphraseChangeActivity_passphrases_dont_match_exclamation">המשפט הסודי אינו מתאים!</string>
   <string name="PassphraseChangeActivity_incorrect_old_passphrase_exclamation">המשפט הסודי הישן אינו נכון!</string>
@@ -462,6 +478,8 @@
   <string name="RegistrationActivity_i_understand">הבנתי</string>
   <string name="RegistrationActivity_play_services_error">שגיאה בשירותי Play</string>
   <string name="RegistrationActivity_google_play_services_is_updating_or_unavailable">שירותי גוגל Play מתעדכנים או שאינם זמינים כעת. נא לנסות שוב.</string>
+  <string name="RegistrationActivity_more_information">יותר מידע</string>
+  <string name="RegistrationActivity_less_information">פחות מידע</string>
   <!--RegistrationProblemsActivity-->
   <string name="RegistrationProblemsActivity_possible_problems">בעיות אפשריות</string>
   <!--RegistrationProgressActivity-->
@@ -484,11 +502,14 @@
   <string name="RegistrationProgressActivity_too_many_requests">יותר מדי בקשות!</string>
   <string name="RegistrationProgressActivity_youve_already_requested_a_voice_call">כבר ביקשת לאחרונה שיחה קולית. אפשר לבקש עוד אחת בעוד 20 דקות.</string>
   <string name="RegistrationProgressActivity_registration_conflict">התנגשות רישום</string>
+  <string name="RegistrationProgressActivity_this_number_is_already_registered_on_a_different">המספר הזה כבר נרשם בשרת סיגנל אחר. יש לבטל את הרישום שם לפני רישום כאן.</string>
   <!--RegistrationService-->
   <string name="RegistrationService_registration_complete">הרישום הושלם</string>
   <string name="RegistrationService_signal_registration_has_successfully_completed">רישום בסיגנל הושלם בהצלחה.</string>
   <string name="RegistrationService_registration_error">שגיאת רישום</string>
   <string name="RegistrationService_signal_registration_has_encountered_a_problem">רישום בסיגנל גילה בעיה.</string>
+  <!--RingtonePreference-->
+  <string name="RingtonePreference_ringtone_silent">אין</string>
   <!--Slide-->
   <string name="Slide_image">תמונה</string>
   <string name="Slide_audio">קול</string>
@@ -512,11 +533,23 @@
   <string name="ThreadRecord_called_you">התקשרו אליך</string>
   <string name="ThreadRecord_missed_call">שיחה שלא נענתה</string>
   <string name="ThreadRecord_media_message">מסר מדיה</string>
+  <string name="ThreadRecord_s_is_on_signal">%s משתמש בסיגנל!</string>
   <string name="ThreadRecord_disappearing_message_time_updated_to_s">זמן העלמת המסר הוגדר ל־%s</string>
+  <string name="ThreadRecord_safety_number_changed">מספר הבטיחות השתנה</string>
   <string name="ThreadRecord_your_safety_number_with_s_has_changed">מספר הבטיחות שלך עם  %s השתנה.</string>
+  <string name="ThreadRecord_you_marked_verified">סימנת כמאומת</string>
+  <string name="ThreadRecord_you_marked_unverified">סימנת כבלתי מאומת</string>
   <!--UpdateApkReadyListener-->
   <string name="UpdateApkReadyListener_Signal_update">עדכון סיגנל</string>
   <string name="UpdateApkReadyListener_a_new_version_of_signal_is_available_tap_to_update">זמינה גרסה חדשה של סיגנל, נא ללחוץ כאן לעדכון</string>
+  <!--UnknownSenderView-->
+  <string name="UnknownSenderView_block">לחסום</string>
+  <!--UntrustedSendDialog-->
+  <string name="UntrustedSendDialog_send_message">שלח את המסר?</string>
+  <string name="UntrustedSendDialog_send">שלח</string>
+  <!--UnverifiedSendDialog-->
+  <string name="UnverifiedSendDialog_send_message">שלח את המסר?</string>
+  <string name="UnverifiedSendDialog_send">שלח</string>
   <!--VerifyIdentityActivity-->
   <string name="VerifyIdentityActivity_your_contact_is_running_an_old_version_of_signal">איש הקשר שלך מריץ גרסה ישנה של סיגנל. נא לבקש מאיש הקשר לעדכן לפני אימות מספר הבטיחות שלך.</string>
   <string name="VerifyIdentityActivity_your_contact_is_running_a_newer_version_of_Signal">איש הקשר שלך מריץ גרסה חדשה יותר של סיגנל עם תסדיר בלתי־תואם של קוד QR. נא לעדכן בשביל להשוות.</string>
@@ -577,6 +610,8 @@
   <string name="MessageNotifier_mark_read">לסמן שקראתי</string>
   <string name="MessageNotifier_media_message">מסר מדיה</string>
   <string name="MessageNotifier_reply">להשיב</string>
+  <string name="MessageNotifier_pending_signal_messages">מסרי סיגנל ממתינים</string>
+  <string name="MessageNotifier_you_have_pending_signal_messages">יש לך מסרים ממתינים בסיגנל, נא ללחוץ כדי לפתוח ולאחזר</string>
   <!--MmsPreferencesFragment-->
   <string name="MmsPreferencesFragment__manual_mms_settings_are_required">נדרשות הגדרות MMS ידניות עבור מכשירך.</string>
   <string name="MmsPreferencesFragment__enabled">מופעל</string>
@@ -588,6 +623,7 @@
   <string name="QuickResponseService_quick_response_unavailable_when_Signal_is_locked">תשובה מהירה אינה זמינה כשסיגנל נעול!</string>
   <string name="QuickResponseService_problem_sending_message">בעיה בשליחת מסר!</string>
   <!--SaveAttachmentTask-->
+  <string name="SaveAttachmentTask_open_directory">פתיחת מדריך</string>
   <!--SingleRecipientNotificationBuilder-->
   <string name="SingleRecipientNotificationBuilder_signal">סיגנל</string>
   <string name="SingleRecipientNotificationBuilder_new_message">מסר חדש</string>
@@ -610,6 +646,10 @@
   <string name="attachment_type_selector__location_description">מיקום</string>
   <string name="attachment_type_selector__gif">קובץ GIF</string>
   <string name="attachment_type_selector__gif_description">קובץ Gif</string>
+  <string name="attachment_type_selector__gallery_description">תמונה או סרט</string>
+  <string name="attachment_type_selector__file_description">קובץ</string>
+  <string name="attachment_type_selector__gallery">גלריה</string>
+  <string name="attachment_type_selector__file">קובץ</string>
   <string name="attachment_type_selector__drawer_description">הפעלת מגירת צרופות</string>
   <!--change_passphrase_activity-->
   <string name="change_passphrase_activity__old_passphrase">משפט סודי ישן</string>
@@ -631,6 +671,9 @@
   <!--conversation_title_view-->
   <string name="conversation_title_view__conversation_muted">שיחה מושתקת</string>
   <!--conversation_activity-->
+  <string name="conversation_activity__type_message_push">מסר סיגנל</string>
+  <string name="conversation_activity__type_message_sms_insecure">מסרון SMS לא מאובטח</string>
+  <string name="conversation_activity__type_message_mms_insecure">מסרון MMS לא מאובטח</string>
   <string name="conversation_activity__from_sim_name">מ־%1$s</string>
   <string name="conversation_activity__send">שליחה</string>
   <string name="conversation_activity__remove">הסרה</string>
@@ -705,6 +748,16 @@
     <item quantity="other">%d שבועות</item>
   </plurals>
   <string name="expiration_weeks_abbreviated">%dשב׳</string>
+  <!--unverified safety numbers-->
+  <string name="IdentityUtil_unverified_banner_one">מספר הבטיחות שלך עם %s השתנה ואינו מאומת יותר</string>
+  <string name="IdentityUtil_unverified_banner_two">מספרי הבטיחות שלך עם %1$s ו %2$s אינם מאומתים יותר</string>
+  <string name="IdentityUtil_unverified_banner_many">מספרי הבטיחות שלך עם %1$s, %2$s ו %3$s אינם מאומתים יותר</string>
+  <string name="IdentityUtil_unverified_dialog_one">מספר הבטיחות שלך עם %1$s השתנה ואינו מאומת יותר. ייתכן שמישהו מנסה ליירט את התקשורת שלך, או ש %1$sפשוט התקין סיגנל מחדש.</string>
+  <string name="IdentityUtil_unverified_dialog_two">מספרי הבטיחות שלך עם %1$s ו %2$s אינם מאומתים יותר. ייתכן שמישהו מנסה ליירט את התקשורת ביניכם, או שהם פשוט התקינו סיגנל מחדש.</string>
+  <string name="IdentityUtil_unverified_dialog_many">מספרי הבטיחות שלך עם %1$s, %2$s ו %3$s אינם מאומתים יותר. ייתכן שמישהו מנסה ליירט את התקשורת ביניכם, או שהם פשוט התקינו סיגנל מחדש.</string>
+  <string name="IdentityUtil_untrusted_dialog_one">מספר הבטיחות שלך עם %s השתנה</string>
+  <string name="IdentityUtil_untrusted_dialog_two">מספרי הבטיחות שלך עם %1$s ו %2$s השתנו.</string>
+  <string name="IdentityUtil_untrusted_dialog_many">מספרי הבטיחות שלך עם %1$s, %2$s ו %3$s השתנו.</string>
   <!--giphy_activity-->
   <string name="giphy_activity_toolbar__search_gifs_and_stickers">חיפוש קובצי GIF ומדבקות</string>
   <!--giphy_fragment-->
@@ -740,7 +793,6 @@
   <!--media_overview_activity-->
   <string name="media_overview_activity__no_media">אין מדיה</string>
   <!--message_recipients_list_item-->
-  <string name="message_recipients_list_item__verify">אימות</string>
   <string name="message_recipients_list_item__resend">שליחה חוזרת</string>
   <string name="message_recipients_list_item__resending">שליחה חוזרת...</string>
   <!--GroupUtil-->
@@ -749,11 +801,13 @@
     <item quantity="other">%1$s הצטרפו לקבוצה.</item>
   </plurals>
   <string name="GroupUtil_group_name_is_now">שם הקבוצה עכשיו הוא „%1$s”.</string>
+  <!--profile_group_share_view-->
   <!--prompt_passphrase_activity-->
   <string name="prompt_passphrase_activity__unlock">ביטול נעילה</string>
   <!--prompt_mms_activity-->
   <string name="prompt_mms_activity__signal_requires_mms_settings_to_deliver_media_and_group_messages">סיגנל דורש הגדרות MMS כדי למסור מדיה ומסרים קבוצתיים דרך ספק התקשורת הניידת שלך. המידע הזה אינו זמין במכשיר שלך, מה שלפעמים קורה במכשירים נעולים ובתצורות מגבילות אחרות.</string>
   <string name="prompt_mms_activity__to_send_media_and_group_messages_tap_ok">כדי לשלוח מדיה ומסרים קבוצתיים, יש ללחוץ „אישור” ולהשלים את ההגדרות המבוקשות. את הגדרות ה־MMS עבור ספק השירות שלך בדרך־כלל אפשר למצוא באמצעות חיפוש „ספק השרות APN”. צריך לעשות את זה רק פעם אחת.</string>
+  <!--profile_create_activity-->
   <!--recipient_preferences_activity-->
   <string name="recipient_preference_activity__blocked">חסום</string>
   <!--recipient_preferences-->
@@ -764,7 +818,8 @@
   <string name="recipient_preferences__block">לחסום</string>
   <string name="recipient_preferences__color">צבע</string>
   <string name="recipient_preferences__color_for_this_contact">צבע לאיש הקשר הזה</string>
-  <string name="recipient_preferences__verify_safety_number">אימות מספר בטיחות</string>
+  <string name="recipient_preferences__view_safety_number">הצג מספר בטיחות</string>
+  <string name="recipient_preferences__privacy">פרטיות</string>
   <!--- redphone_call_controls-->
   <string name="redphone_call_card__signal_call">שיחת סיגנל</string>
   <string name="redphone_call_controls__end_call">סיום שיחה</string>
@@ -779,6 +834,7 @@
 ומספר הטלפון</string>
   <string name="registration_activity__phone_number">מספר הטלפון</string>
   <string name="registration_activity__register">רישום</string>
+  <string name="registration_activity__registration_will_transmit_some_contact_information_to_the_server_temporariliy">סיגנל מאפשר תקשורת קלה באמצעות מספר טלפון וספר טלפונים שכבר יש לך. חברים ואנשי קשר שכבר יודעים להשיג אותך בטלפון יוכלו ליצור אתך קשר בקלות בסיגנל.\n\nרישום שולח מידע מסוים על יצירת קשר לשרת. הוא לא מאוחסן.</string>
   <string name="registration_activity__powered_by_twilio">מופעל באמצעות טוויליו</string>
   <!--registration_problems-->
   <string name="registration_problems__some_possible_problems_include">בעיות אפשריות
@@ -833,9 +889,12 @@
   <!--recipients_panel-->
   <string name="recipients_panel__to"><small>נא להזין שם או מספר</small></string>
   <string name="recipients_panel__add_members">הוספת חברים</string>
+  <!--unknown_sender_view-->
   <!--verify_display_fragment-->
-  <string name="verify_display_fragment__if_you_wish_to_verify_the_security_of_your_end_to_end_encryption_with_s"><![CDATA[אם ברצונך לוודא את האבטחה של ההצפנה מקצה לקצה עם %s, יש להשוות את המספרים בחלק העליון עם המספרים במכשיר שלו.  או לחלופין, באפשרותך לסרוק את הקוד במכשיר שלו או לבקש ממנו לסרוק את הקוד שלך. <a href="https://whispersystems.org/redirect/safety-numbers">מידע נוסף על מספרי בטיחות</a>.]]></string>
+  <string name="verify_display_fragment__if_you_wish_to_verify_the_security_of_your_end_to_end_encryption_with_s"><![CDATA[אם ברצונך לוודא את אבטחת ההצפנה שלך עם %s, השווה את המספר לעיל עם המספר על ההתקן שלהם. לחלופין, תוכל לסרוק את הקוד בטלפון שלהם, או שאתה יכול לבקש מהם לסרוק את הקוד שלך. <a href="https://whispersystems.org/redirect/safety-numbers">מידע נוסף </a>]]></string>
   <string name="verify_display_fragment__tap_to_scan">יש ללחוץ לסריקה</string>
+  <string name="verify_display_fragment__loading">טוען...</string>
+  <string name="verify_display_fragment__verified">מאומת</string>
   <!--verify_identity-->
   <string name="verify_identity__share_safety_number">שיתוף מספר בטיחות</string>
   <!--message_details_header-->
@@ -880,7 +939,14 @@
   <string name="arrays__images">תמונות</string>
   <string name="arrays__audio">קול</string>
   <string name="arrays__video">סרט</string>
+  <string name="arrays__documents">מסמכים</string>
+  <string name="arrays__small">קטן</string>
   <string name="arrays__normal">רגיל</string>
+  <string name="arrays__large">גדול</string>
+  <string name="arrays__extra_large">גדול מאוד</string>
+  <string name="arrays__default">בררת מחדל</string>
+  <string name="arrays__high">גבוה</string>
+  <string name="arrays__max">מרבי</string>
   <!--plurals.xml-->
   <plurals name="hours_ago">
     <item quantity="one">שעה %d</item>
@@ -981,7 +1047,7 @@
   <string name="preferences__enable_if_your_device_supports_sms_mms_delivery_over_wifi">יש להפעיל את זה אם המכשיר שלך משתמש במסירת SMS/MMS דרך WiFi (ורק אם מצב „התקשרות Wifi” או WiFi Calling מופעל במכשיר שלך)</string>
   <string name="preferences_app_protection__blocked_contacts">אנשי קשר חסומים</string>
   <string name="preferences_app_protection__safety_numbers_approval">אישור מספרי בטיחות</string>
-  <string name="preferences_app_protecting__require_approval_of_new_safety_numbers_when_they_change">לדרוש אישור מספרי בטיחות חדשים כאשר הם משתנים</string>
+  <string name="preferences_app_protecting__require_approval_of_new_safety_numbers_when_they_change">דרוש אישור מספרי בטיחות חדשים כאשר הם משתנים</string>
   <string name="preferences_notifications__display_in_notifications">להציג בהתראות</string>
   <string name="preferences_chats__when_using_mobile_data">בזמן שימוש בנתונים ניידים</string>
   <string name="preferences_chats__when_using_wifi">בזמן שימוש ב-WiFi</string>
@@ -994,6 +1060,18 @@
   <string name="preferences_advanced__enable_support_for_next_generation_video_and_voice_calls">תמיכה בדור הבא של שיחות וידאו וקול, כשזה שני הצדדים הפעילו אותה. האפשרות הזאת במצב בטא.</string>
   <string name="preferences_advanced__relay_all_calls_through_the_signal_server_to_avoid_revealing_your_ip_address">שלחו את כל השיחות דרך שרת סיגנל כדי להימנע מחשיפת כתובת ה־IP שלך לאיש הקשר שלך. ההפעלה תפחית את איכות השיחה.</string>
   <string name="preferences_advanced__always_relay_calls">תמיד להעביר שיחות</string>
+  <string name="preferences_app_protection__app_access">גישת אפליקציה</string>
+  <string name="preferences_app_protection__communication">תקשורת</string>
+  <string name="preferences_chats__chats">שיחות</string>
+  <string name="preferences_notifications__messages">מסרים</string>
+  <string name="preferences_notifications__events">אירועים</string>
+  <string name="preferences_notifications__in_chat_sounds">צלילים בתוך שיחה</string>
+  <string name="preferences_notifications__show">הצגה</string>
+  <string name="preferences_chats__show_invitation_prompts">הצגת קריאות הזמנה</string>
+  <string name="preferences_chats__display_invitation_prompts_for_contacts_without_signal">הצגת קריאות הזמנה ללא סיגנל</string>
+  <string name="preferences_chats__message_text_size">גודל גופן מסר</string>
+  <string name="preferences_events__contact_joined_signal">איש קשר הצטרף לסיגנל</string>
+  <string name="preferences_notifications__priority">עדיפות</string>
   <!--****************************************-->
   <!--menus-->
   <!--****************************************-->

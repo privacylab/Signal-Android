@@ -11,7 +11,8 @@ public interface MmsSmsColumns {
   public static final String BODY                     = "body";
   public static final String ADDRESS                  = "address";
   public static final String ADDRESS_DEVICE_ID        = "address_device_id";
-  public static final String RECEIPT_COUNT            = "delivery_receipt_count";
+  public static final String DELIVERY_RECEIPT_COUNT   = "delivery_receipt_count";
+  public static final String READ_RECEIPT_COUNT       = "read_receipt_count";
   public static final String MISMATCHED_IDENTITIES    = "mismatched_identities";
   public static final String UNIQUE_ROW_ID            = "unique_row_id";
   public static final String SUBSCRIPTION_ID          = "subscription_id";
@@ -50,15 +51,15 @@ public interface MmsSmsColumns {
     protected static final long MESSAGE_FORCE_SMS_BIT  = 0x40;
 
     // Key Exchange Information
-    protected static final long KEY_EXCHANGE_MASK                = 0xFF00;
-    protected static final long KEY_EXCHANGE_BIT                 = 0x8000;
-    protected static final long KEY_EXCHANGE_STALE_BIT           = 0x4000;
-    protected static final long KEY_EXCHANGE_PROCESSED_BIT       = 0x2000;
-    protected static final long KEY_EXCHANGE_CORRUPTED_BIT       = 0x1000;
-    protected static final long KEY_EXCHANGE_INVALID_VERSION_BIT =  0x800;
-    protected static final long KEY_EXCHANGE_BUNDLE_BIT          =  0x400;
-    protected static final long KEY_EXCHANGE_IDENTITY_UPDATE_BIT =  0x200;
-    protected static final long KEY_EXCHANGE_CONTENT_FORMAT      =  0x100;
+    protected static final long KEY_EXCHANGE_MASK                  = 0xFF00;
+    protected static final long KEY_EXCHANGE_BIT                   = 0x8000;
+    protected static final long KEY_EXCHANGE_IDENTITY_VERIFIED_BIT = 0x4000;
+    protected static final long KEY_EXCHANGE_IDENTITY_DEFAULT_BIT  = 0x2000;
+    protected static final long KEY_EXCHANGE_CORRUPTED_BIT         = 0x1000;
+    protected static final long KEY_EXCHANGE_INVALID_VERSION_BIT   = 0x800;
+    protected static final long KEY_EXCHANGE_BUNDLE_BIT            = 0x400;
+    protected static final long KEY_EXCHANGE_IDENTITY_UPDATE_BIT   = 0x200;
+    protected static final long KEY_EXCHANGE_CONTENT_FORMAT        = 0x100;
 
     // Secure Message Information
     protected static final long SECURE_MESSAGE_BIT = 0x800000;
@@ -112,7 +113,7 @@ public interface MmsSmsColumns {
     public static boolean isPendingMessageType(long type) {
       return
           (type & BASE_TYPE_MASK) == BASE_OUTBOX_TYPE ||
-              (type & BASE_TYPE_MASK) == BASE_SENDING_TYPE;
+          (type & BASE_TYPE_MASK) == BASE_SENDING_TYPE;
     }
 
     public static boolean isPendingSmsFallbackType(long type) {
@@ -152,12 +153,12 @@ public interface MmsSmsColumns {
       return (type & KEY_EXCHANGE_BIT) != 0;
     }
 
-    public static boolean isStaleKeyExchange(long type) {
-      return (type & KEY_EXCHANGE_STALE_BIT) != 0;
+    public static boolean isIdentityVerified(long type) {
+      return (type & KEY_EXCHANGE_IDENTITY_VERIFIED_BIT) != 0;
     }
 
-    public static boolean isProcessedKeyExchange(long type) {
-      return (type & KEY_EXCHANGE_PROCESSED_BIT) != 0;
+    public static boolean isIdentityDefault(long type) {
+      return (type & KEY_EXCHANGE_IDENTITY_DEFAULT_BIT) != 0;
     }
 
     public static boolean isCorruptedKeyExchange(long type) {
